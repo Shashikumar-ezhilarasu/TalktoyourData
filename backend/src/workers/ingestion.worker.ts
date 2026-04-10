@@ -1,5 +1,4 @@
-import { Worker, Queue } from 'bullmq';
-import redis from '../config/redis';
+import redis, { getIsRedisAvailable } from '../config/redis';
 import { Dataset } from '../models/Dataset.model';
 import { DataChunk } from '../models/DataChunk.model';
 import { Validator } from '../pipeline/ingestion/Validator';
@@ -9,9 +8,9 @@ import { StatProfiler } from '../pipeline/ingestion/StatProfiler';
 import { SchemaEmbedder } from '../pipeline/ingestion/SchemaEmbedder';
 import Papa from 'papaparse';
 
-const embeddingQueue = new Queue('embedding', { connection: redis });
+import { Worker, Queue } from 'bullmq';
 
-export const ingestionWorker = new Worker('ingestion', async (job) => {
+export const ingestionWorkerLogic = async (job: { data: any, updateProgress: (p: number) => Promise<void> }) => {
   const { datasetId, csvData } = job.data;
   const dataset = await Dataset.findById(datasetId);
   if (!dataset) throw new Error('Dataset not found');
@@ -68,8 +67,14 @@ export const ingestionWorker = new Worker('ingestion', async (job) => {
     dataset.sampleRows = rows.slice(0, 10).map(r => Object.values(r));
     await dataset.save();
 
-    // 7. Trigger Embeddings Job
-    await embeddingQueue.add('embed-schema', { datasetId, profiles });
+    // 7. Trigger Embeddings Job (If Redis is available)
+    if (getIsRedisAvailable()) {
+        const embeddingQueue = new Queue('embedding', { connection: redis });
+        await embeddingQueue.add('embed-schema', { datasetId, profiles });
+    } else {
+        const embedder = new SchemaEmbedder();
+        await embedder.embedDataset(datasetId, profiles);
+    }
     
     await job.updateProgress(100);
   } catch (err: any) {
@@ -78,4 +83,8 @@ export const ingestionWorker = new Worker('ingestion', async (job) => {
     await dataset.save();
     throw err;
   }
-}, { connection: redis, concurrency: 3 });
+};
+
+export const ingestionWorker = getIsRedisAvailable() 
+  ? new Worker('ingestion', ingestionWorkerLogic, { connection: redis, concurrency: 3 })
+  : null;
