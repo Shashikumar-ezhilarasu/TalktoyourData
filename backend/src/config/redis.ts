@@ -9,20 +9,34 @@ const logger = winston.createLogger({
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
-export const redis = new Redis(redisUrl, {
-  maxRetriesPerRequest: null, // Required for BullMQ
-  retryStrategy: (times) => {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-});
+export let redis: Redis;
+let isRedisAvailable = false;
 
-redis.on('connect', () => {
-  logger.info('Successfully connected to Redis');
-});
+try {
+  redis = new Redis(redisUrl, {
+    maxRetriesPerRequest: null,
+    retryStrategy: (times) => {
+      if (times > 3) {
+        isRedisAvailable = false;
+        logger.warn('Redis unavailable, falling back to in-memory processing');
+        return null; // Stop retrying
+      }
+      return Math.min(times * 50, 2000);
+    },
+  });
+  
+  redis.on('connect', () => {
+    isRedisAvailable = true;
+    logger.info('Successfully connected to Redis');
+  });
 
-redis.on('error', (error) => {
-  logger.error('Redis connection error:', error);
-});
+  // Suppress unhandled error logs when Redis is down
+  redis.on('error', () => {
+    isRedisAvailable = false;
+  });
+} catch (e) {
+  logger.warn('Redis initialization failed, into-memory fallback active');
+}
 
+export const getIsRedisAvailable = () => isRedisAvailable;
 export default redis;

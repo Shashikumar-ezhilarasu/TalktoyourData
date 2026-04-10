@@ -43,7 +43,6 @@ const QueryCacheSchema = new Schema<IQueryCache>({
   expiry: { type: Date, required: true }
 });
 
-QueryCacheSchema.index({ cacheKey: 1 });
 QueryCacheSchema.index({ expiry: 1 }, { expireAfterSeconds: 0 });
 
 export const QueryCache = mongoose.model<IQueryCache>('QueryCache', QueryCacheSchema);

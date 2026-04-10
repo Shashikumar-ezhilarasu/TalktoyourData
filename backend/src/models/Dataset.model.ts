@@ -52,7 +52,7 @@ export interface IDataset extends Document {
   piiColumnsRedacted: string[];
   isChunked: boolean;
   chunkCount: number;
-  processingStatus: 'pending' | 'processing' | 'ready' | 'error'];
+  processingStatus: 'pending' | 'processing' | 'ready' | 'error';
   errorMessage?: string;
   sampleRows: any[][];
 }
