@@ -1,0 +1,40 @@
+{
+  "metrics": [
+    {
+      "id": "revenue",
+      "name": "Revenue",
+      "description": "Total sales amount generated from customers",
+      "aliases": ["sales", "turnover", "income"],
+      "type": "sum",
+      "format": "currency"
+    },
+    {
+      "id": "orders",
+      "name": "Orders",
+      "description": "Total number of completed transactions",
+      "aliases": ["sales count", "transactions"],
+      "type": "count",
+      "format": "number"
+    },
+    {
+      "id": "avg_order_value",
+      "name": "AOV",
+      "description": "Average amount spent per order",
+      "formula": "revenue / orders",
+      "type": "derived",
+      "format": "currency"
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "region",
+      "name": "Region",
+      "description": "Geographical area of the customer"
+    },
+    {
+      "id": "product_category",
+      "name": "Category",
+      "description": "The grouping of the product sold"
+    }
+  ]
+}
