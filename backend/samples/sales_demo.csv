@@ -1,0 +1,11 @@
+Date,Region,Product,Sales,Target,Customers,Satisfaction
+2023-01-01,North,Organic Coffee,1200,1000,450,4.8
+2023-01-01,South,Organic Coffee,800,900,320,4.2
+2023-01-02,North,Organic Tea,1500,1200,510,4.9
+2023-01-02,East,Organic Coffee,2200,1800,680,4.5
+2023-01-03,West,Organic Tea,900,1100,280,3.9
+2023-01-03,North,Organic Coffee,1300,1000,470,4.7
+2023-01-04,South,Organic Tea,3100,2500,890,4.4
+2023-01-04,East,Organic Coffee,1900,1800,590,4.6
+2023-01-05,North,Organic Tea,1400,1200,490,4.8
+2023-01-05,West,Organic Coffee,4500,3500,1200,4.9
