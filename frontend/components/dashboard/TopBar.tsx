@@ -8,34 +8,37 @@ export const TopBar = () => {
   const { dataset } = useDashboardStore();
 
   return (
-    <header className="h-[52px] border-b border-bg-border bg-bg-base/85 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-50">
-      <div className="flex items-center gap-8">
-        <Link href="/" className="font-sans font-medium text-sm flex items-center gap-2">
-          <span className="text-text-secondary">Data</span>
-          <span className="text-accent">Lens</span>
+    <header className="h-[52px] border-b border-bg-border bg-bg-base/60 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-50">
+      <div className="flex items-center gap-10">
+        <Link href="/" className="flex items-center gap-2 group">
+          <span className="text-accent text-lg">✦</span>
+          <span className="font-bold text-xs uppercase tracking-[0.3em] text-text-primary group-hover:text-accent transition-colors">DataLens</span>
         </Link>
         
         {dataset && (
-          <div className="flex items-center gap-3 text-xs mono">
-            <span className="text-text-primary">{dataset.filename}</span>
-            <span className="text-tertiary">·</span>
-            <span className="text-text-secondary">{dataset.rowCount.toLocaleString()} rows</span>
-            <span className="text-tertiary">·</span>
-            <span className="text-text-secondary">{dataset.columnCount} columns</span>
+          <div className="flex items-center gap-6">
+            <div className="h-3 w-[1px] bg-bg-border" />
+            <div className="flex items-center gap-4 mono text-[9px] uppercase tracking-widest text-text-tertiary">
+              <span className="text-text-secondary">{dataset.filename}</span>
+              <span>·</span>
+              <span>{dataset.rowCount.toLocaleString()} ROWS</span>
+              <span>·</span>
+              <span>{dataset.columnCount} COLS</span>
+            </div>
           </div>
         )}
       </div>
 
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <StatusDot status={dataset?.processingStatus || 'processing'} />
-          <span className="text-[10px] mono uppercase tracking-wider text-text-secondary">
-            {dataset?.processingStatus || 'Initializing'}
+        <div className="flex items-center gap-3 px-3 py-1 rounded-full bg-bg-elevated/50 border border-bg-border">
+          <div className="w-1 h-1 rounded-full bg-accent animate-pulse" />
+          <span className="text-[9px] mono uppercase tracking-tighter text-text-secondary italic">
+            Engine: {dataset?.processingStatus || 'Standby'}
           </span>
         </div>
         
-        <Link href="/" className="btn-ghost !py-1 !px-3 text-[11px] uppercase mono">
-          New Dataset
+        <Link href="/" className="btn-terminal">
+          Disconnect
         </Link>
       </div>
     </header>

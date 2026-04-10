@@ -6,98 +6,107 @@ import { BreakdownBarChart } from '../charts/BreakdownBarChart';
 
 export const AnswerCard = ({ result }: { result: QueryResult }) => {
   return (
-    <div className="card animate-reveal mb-8 p-0 overflow-hidden flex flex-col group">
-      {/* Intent Header */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-bg-border group-hover:bg-bg-elevated/20 transition-colors">
-        <div className="flex items-center gap-3">
-          <span className={`badge badge-${result.intent.toLowerCase()}`}>
-            {result.intent}
-          </span>
-          <span className="text-[10px] mono text-tertiary">
-            {new Date(result.createdAt).toLocaleTimeString()}
+    <div className="bg-bg-surface border border-bg-border rounded-sm mb-8 reveal group hover:border-accent/30 transition-all duration-500 overflow-hidden">
+      {/* Precision Header */}
+      <div className="px-6 py-3 border-b border-bg-border flex items-center justify-between bg-bg-elevated/20">
+        <div className="flex items-center gap-4">
+          <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+          <span className="mono text-[9px] uppercase tracking-[0.2em] text-accent font-bold">
+            {result.intent} Dispatch
           </span>
         </div>
-        <button className="text-tertiary hover:text-accent transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-          </svg>
-        </button>
+        <span className="mono text-[9px] uppercase text-text-tertiary">
+          Trace: {result._id?.toString().slice(-8) || 'LOCAL_01'}
+        </span>
       </div>
 
-      <div className="p-6">
-        {/* Headline & Metric */}
-        <div className="mb-8">
-            <h2 className="heading-1 mb-6 text-text-primary leading-tight max-w-2xl">
-                {result.headline}
-            </h2>
-            
-            <div className="card !bg-bg-base/30 !p-6 border-bg-border/50 flex items-center justify-between">
-                <div className="flex flex-col gap-1">
-                    <span className="mono text-[10px] uppercase text-text-secondary tracking-widest">{result.metricName}</span>
-                    <NumberTicker value={result.metricValue} decimals={2} />
-                </div>
-                
-                <div className="flex flex-col items-end gap-1">
-                    <div className={`
-                        px-2 py-0.5 rounded-md text-xs font-medium mono
-                        ${result.changeDirection === 'up' ? 'bg-green-dim text-green' : 'bg-red-dim text-red'}
-                    `}>
-                        {result.changeDirection === 'up' ? '↑' : '↓'} {Math.abs(result.changeValue)}%
-                    </div>
-                    <span className="text-[10px] mono text-tertiary uppercase">vs previous period</span>
-                </div>
+      <div className="p-8">
+        {/* Editorial Headline */}
+        <h2 className="text-3xl font-normal italic text-text-primary mb-8 leading-tight max-w-3xl">
+          {result.headline}
+        </h2>
+        
+        {/* Metric Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-bg-border border border-bg-border rounded-sm overflow-hidden mb-10">
+          <div className="bg-bg-base p-6">
+            <span className="mono text-[9px] uppercase text-text-tertiary block mb-2 tracking-widest">{result.metricName}</span>
+            <div className="flex items-baseline gap-3">
+              <NumberTicker value={result.metricValue} decimals={2} />
+              <span className="text-sm text-text-tertiary italic">Primary</span>
             </div>
+          </div>
+          
+          <div className="bg-bg-base p-6 flex flex-col justify-end">
+            <span className="mono text-[9px] uppercase text-text-tertiary block mb-2 tracking-widest">Statistical Variance</span>
+            <div className={`flex items-center gap-2 font-bold ${result.changeDirection === 'up' ? 'text-green' : 'text-red'}`}>
+              <span className="text-lg mono">{result.changeDirection === 'up' ? '↑' : '↓'} {Math.abs(result.changeValue)}%</span>
+              <div className={`text-[10px] px-2 py-0.5 rounded-full border ${result.changeDirection === 'up' ? 'bg-green/10 border-green/20' : 'bg-red/10 border-red/20'}`}>
+                Relative to Baseline
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Top Contributor if exists */}
-        {result.topContributor && (
-            <div className="mb-8 p-4 rounded-lg bg-accent-dim/10 border-l-2 border-accent flex items-center gap-4">
-                <div className="w-8 h-8 rounded-full bg-accent-dim flex items-center justify-center text-accent text-xs">
-                    {result.changeDirection === 'up' ? '↑' : '↓'}
-                </div>
-                <div>
-                    <h4 className="heading-3 text-accent-text">{result.topContributor.value} {result.topContributor.dimension}</h4>
-                    <p className="caption">Biggest contributor to {result.changeDirection} with {result.topContributor.impact}% impact.</p>
-                </div>
-            </div>
-        )}
-
-        {/* Explanation */}
-        <p className="body text-text-secondary leading-relaxed mb-8">
-            {result.explanation}
-        </p>
-
-        {/* Charts */}
-        <div className="mb-8">
+        {/* Insight Breakdown */}
+        <div className="flex flex-col lg:flex-row gap-12 items-start">
+          <div className="flex-1">
+             <div className="mono text-[9px] uppercase text-text-tertiary mb-6 flex items-center gap-3">
+              <span className="w-4 h-[1px] bg-bg-border" />
+              Agent Interpretation
+             </div>
+             <p className="text-lg text-text-secondary leading-relaxed font-medium">
+                {result.explanation}
+             </p>
+          </div>
+          
+          <div className="w-full lg:w-[450px] pt-4">
             {result.intent === 'BREAKDOWN' && <BreakdownBarChart data={result.chartData} />}
-            {/* Other chart types would follow here */}
-        </div>
+            
+            {result.intent === 'COMPARISON' && (
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between p-4 bg-bg-base border border-bg-border">
+                  <span className="mono text-[10px] text-text-tertiary">Group A</span>
+                  <span className="text-xl italic">{result.chartData?.labels?.[0]}</span>
+                </div>
+                <div className="flex items-center justify-center py-4">
+                  <div className="px-4 py-2 bg-accent/10 border border-accent/20 rounded-full mono text-[11px] text-accent">
+                    {result.changeValue}% Variance
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-bg-base border border-bg-border">
+                  <span className="mono text-[10px] text-text-tertiary">Group B</span>
+                  <span className="text-xl italic">{result.chartData?.labels?.[1]}</span>
+                </div>
+              </div>
+            )}
 
-        {/* Follow Ups */}
-        <div className="flex gap-2 flex-wrap">
-            {result.suggestedFollowUps.map(q => (
-                <button key={q} className="px-3 py-1.5 rounded-full border border-bg-border hover:border-accent/40 text-[11px] text-text-secondary hover:text-text-primary transition-all">
-                    {q}
-                </button>
-            ))}
+            {result.intent === 'ANOMALY' && (
+              <div className="grid grid-cols-2 gap-4">
+                 {result.chartData?.values?.map((v: any, i: number) => (
+                   <div key={i} className="p-4 bg-red-dim/10 border border-red/20 rounded-sm">
+                      <span className="mono text-[9px] text-red uppercase block mb-1">Outlier</span>
+                      <span className="text-xl font-medium">{v}</span>
+                   </div>
+                 ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Source Footer */}
-      <div className="px-6 py-4 bg-bg-elevated/30 border-t border-bg-border flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-            <span className="mono text-[10px] text-tertiary uppercase tracking-tighter">
-                Computed from {result.sourceSummary}
-            </span>
-            <div className="flex items-center gap-2">
-                <div className="w-16 h-1 bg-bg-border rounded-full overflow-hidden">
-                    <div className="h-full bg-accent" style={{ width: `${result.confidence * 100}%` }} />
-                </div>
-                <span className="mono text-[9px] text-tertiary uppercase">Confidence: {Math.round(result.confidence * 100)}%</span>
+      {/* Trust Footer */}
+      <div className="px-8 py-4 bg-bg-elevated/40 border-t border-bg-border flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <div className="flex flex-col gap-1">
+            <div className="w-24 h-1 bg-bg-border rounded-full overflow-hidden">
+                <div className="h-full bg-accent" style={{ width: `${result.confidence * 100}%` }} />
             </div>
+            <span className="mono text-[8px] uppercase text-text-tertiary">Confidence Index: {Math.round(result.confidence * 100)}%</span>
+          </div>
+          <div className="h-4 w-[1px] bg-bg-border" />
+          <span className="mono text-[9px] uppercase text-text-tertiary">{result.sourceSummary}</span>
         </div>
-        <span className="mono text-[10px] text-tertiary uppercase">{result.durationMs}ms</span>
+        <div className="mono text-[10px] text-text-tertiary">{result.durationMs}ms</div>
       </div>
     </div>
   );

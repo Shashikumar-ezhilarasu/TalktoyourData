@@ -31,7 +31,9 @@ export default function DashboardClient({ datasetId, initialDataset }: { dataset
       startPipeline(queryId);
 
       // 2. Connect to real SSE stream
-      const eventSource = new EventSource(`http://localhost:4000/api/stream/${queryId}`);
+      const host = window.location.hostname;
+      const streamUrl = `http://${host}:4000/api/stream/${queryId}`;
+      const eventSource = new EventSource(streamUrl);
 
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
