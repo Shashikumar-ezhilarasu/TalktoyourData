@@ -1,5 +1,4 @@
 import * as ss from 'simple-statistics';
-import * as math from 'mathjs';
 
 export interface CompareStats {
   groupA: { label: string; sum: number; mean: number; count: number };
@@ -31,6 +30,21 @@ export interface AnomalyStats {
   normalRange: { q1: number; q3: number; iqr: number };
 }
 
+export interface SummaryStats {
+    count: number;
+    sum: number;
+    mean: number;
+    median: number;
+    min: number;
+    max: number;
+    range: number;
+    stdDev: number;
+    variance: number;
+    skewness: number;
+    kurtosis: number;
+    confidenceInterval: [number, number];
+}
+
 export class StatisticalEngine {
   
   extractNumeric(data: any[], metricCol: string, dimensionCol: string, groupLabel: string): number[] {
@@ -44,9 +58,16 @@ export class StatisticalEngine {
     data: any[],
     metricCol: string,
     dimensionCol: string,
-    groupA: string,
-    groupB: string
+    groupA?: string,
+    groupB?: string
   ): CompareStats {
+    // If groups not provided, use top 2 dimensions
+    if (!groupA || !groupB) {
+        const breakdown = this.computeBreakdown(data, metricCol, dimensionCol);
+        groupA = groupA || breakdown.segments[0].dimension;
+        groupB = groupB || breakdown.segments[1].dimension;
+    }
+
     const groupAValues = this.extractNumeric(data, metricCol, dimensionCol, groupA);
     const groupBValues = this.extractNumeric(data, metricCol, dimensionCol, groupB);
     
@@ -56,10 +77,11 @@ export class StatisticalEngine {
 
     const sumA = ss.sum(groupAValues);
     const sumB = ss.sum(groupBValues);
-    const pctChange = ((sumB - sumA) / sumA) * 100;
+    const pctChange = ((sumB - sumA) / (sumA || 1)) * 100;
     
     // Welch's t-test
-    const tTest = ss.tTestTwoSample(groupAValues, groupBValues, 0);
+    const tTest = groupAValues.length > 1 && groupBValues.length > 1 
+        ? ss.tTestTwoSample(groupAValues, groupBValues, 0) : 0;
     const isStatisticallySignificant = Math.abs(tTest) > 1.96; 
     
     const varA = ss.variance(groupAValues);
@@ -123,7 +145,7 @@ export class StatisticalEngine {
     };
   }
 
-  computeAnomalies(data: any[], metricCol: string, dateCol?: string): AnomalyStats {
+  computeAnomalies(data: any[], metricCol: string): AnomalyStats {
     const values = data.map(r => Number(r[metricCol])).filter(v => !isNaN(v));
     if (values.length === 0) throw new Error('No numeric data for anomaly detection');
 
@@ -142,15 +164,15 @@ export class StatisticalEngine {
         value: val,
         zScore: Math.round(zScore * 100) / 100,
         direction: zScore > 0 ? 'spike' : 'dip',
-        deviationPct: Math.round(((val - mean) / (mean || 1)) * 10000) / 100,
-        date: dateCol ? row[dateCol] : undefined
+        deviationPct: Math.round(((val - mean) / (mean || 1)) * 10000) / 100
       };
     }).sort((a, b) => Math.abs(b.zScore) - Math.abs(a.zScore));
     
     const q1 = ss.quantile(values, 0.25);
     const q3 = ss.quantile(values, 0.75);
     const iqr = q3 - q1;
-    const iqrAnomalyCount = values.filter(v => v < q1 - 1.5*iqr || v > q3 + 1.5*iqr).length;
+    
+    const iqrAnomalies = values.filter(v => v < q1 - 1.5*iqr || v > q3 + 1.5*iqr);
     
     return {
       anomalies: anomalies.slice(0, 10),
@@ -159,8 +181,32 @@ export class StatisticalEngine {
       stdDev,
       upperBound: mean + 2.5*stdDev,
       lowerBound: mean - 2.5*stdDev,
-      iqrAnomalyCount,
+      iqrAnomalyCount: iqrAnomalies.length,
       normalRange: { q1, q3, iqr }
+    };
+  }
+
+  computeSummary(data: any[], metricCol: string): SummaryStats {
+    const values = data.map(r => Number(r[metricCol])).filter(v => !isNaN(v));
+    if (values.length === 0) throw new Error('No numeric data for summary');
+
+    const mean = ss.mean(values);
+    const stdDev = ss.standardDeviation(values);
+    const marginOfError = 1.96 * (stdDev / Math.sqrt(values.length));
+
+    return {
+      count: values.length,
+      sum: ss.sum(values),
+      mean: Math.round(mean * 100) / 100,
+      median: ss.median(values),
+      min: ss.min(values),
+      max: ss.max(values),
+      range: ss.max(values) - ss.min(values),
+      stdDev: Math.round(stdDev * 100) / 100,
+      variance: ss.variance(values),
+      skewness: ss.sampleSkewness(values),
+      kurtosis: ss.sampleKurtosis(values),
+      confidenceInterval: [mean - marginOfError, mean + marginOfError]
     };
   }
 }
