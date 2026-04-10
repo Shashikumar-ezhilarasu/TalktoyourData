@@ -1,15 +1,16 @@
-import express from 'express';
 import dotenv from 'dotenv';
+dotenv.config();
+
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { connectDB } from './config/db';
+import { getIsRedisAvailable } from './config/redis';
 import datasetRoutes from './routes/dataset.routes';
 import queryRoutes from './routes/query.routes';
 import streamRoutes from './routes/stream.routes';
 
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -42,6 +43,7 @@ const bootstrap = async () => {
 Port: ${PORT}
 Node: ${process.version}
 Env:  ${process.env.NODE_ENV}
+Redis: ${getIsRedisAvailable() ? 'Active (BullMQ)' : 'Unavailable (In-Memory Fallback)'}
             `);
         });
     } catch (err) {

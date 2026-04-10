@@ -12,7 +12,6 @@ router.get('/:queryId', (req: Request, res: Response) => {
   res.flushHeaders();
 
   const cleanup = queryEventBus.subscribe(queryId, (data) => {
-    res.write(`event: ${data.event}\n`);
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   });
 
