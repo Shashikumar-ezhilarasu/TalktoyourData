@@ -1,8 +1,13 @@
 import { IntentClassifier } from './IntentClassifier';
 import { SchemaResolverAgent } from './SchemaResolverAgent';
-import { BreakdownSubAgent } from './subagents/BreakdownSubAgent';
 import { Dataset } from '../../models/Dataset.model';
 import { DataChunk } from '../../models/DataChunk.model';
+
+// SubAgents
+import { BreakdownSubAgent } from './subagents/BreakdownSubAgent';
+import { SummarySubAgent } from './subagents/SummarySubAgent';
+import { CompareSubAgent } from './subagents/CompareSubAgent';
+import { AnomalySubAgent } from './subagents/AnomalySubAgent';
 
 export class OrchestratorAgent {
   private classifier = new IntentClassifier();
@@ -28,7 +33,6 @@ export class OrchestratorAgent {
     }
 
     // 3. Fetch Data (Chunked or Batch)
-    // For MVP/Demo, we fetch first 10k rows or similar
     const chunks = await DataChunk.find({ datasetId }).limit(10).sort({ chunkIndex: 1 });
     const data = chunks.flatMap(c => c.rows);
 
@@ -36,12 +40,20 @@ export class OrchestratorAgent {
     let result;
     switch (intent.intent) {
         case 'BREAKDOWN':
-            const agent = new BreakdownSubAgent();
-            result = await agent.execute(data, resolved, question);
+            result = await new BreakdownSubAgent().execute(data, resolved, question);
             break;
-        // ... (Other agents would be handled here)
+        case 'SUMMARY':
+            result = await new SummarySubAgent().execute(data, resolved, question);
+            break;
+        case 'COMPARISON':
+            result = await new CompareSubAgent().execute(data, resolved, question);
+            break;
+        case 'ANOMALY':
+            result = await new AnomalySubAgent().execute(data, resolved, question);
+            break;
         default:
-            throw new Error(`Intent ${intent.intent} not yet implemented`);
+            // Fallback to summary if unknown
+            result = await new SummarySubAgent().execute(data, resolved, question);
     }
 
     return result;

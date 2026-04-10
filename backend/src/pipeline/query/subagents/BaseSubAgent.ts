@@ -1,5 +1,5 @@
-import { getFlashModel } from '../../config/gemini';
-import { StatisticalEngine } from './StatisticalEngine';
+import { getFlashModel } from '../../../config/gemini';
+import { StatisticalEngine } from '../StatisticalEngine';
 
 export interface SubAgentOutput {
   intent: string;
