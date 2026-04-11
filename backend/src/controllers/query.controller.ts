@@ -37,6 +37,7 @@ export class QueryController {
 
       // 4. Signal Completion via SSE
       queryEventBus.emitEvent(queryId, 'insight_ready', { ...result, _id: queryDoc._id });
+      console.log(`✅ Query ${queryId} completed in local mode.`);
       
     } catch (err: any) {
       console.error('Query execution failed:', err);

@@ -8,6 +8,7 @@ import { queryEventBus } from '../../utils/eventBus';
 import { LocalBreakdownSubAgent } from './subagents/LocalBreakdownSubAgent';
 import { LocalSummarySubAgent } from './subagents/LocalSummarySubAgent';
 import { LocalCompareSubAgent } from './subagents/LocalCompareSubAgent';
+import { LocalAnomalySubAgent } from './subagents/LocalAnomalySubAgent';
 
 export class OrchestratorAgent {
   private classifier = new LocalIntentClassifier();
@@ -50,11 +51,15 @@ export class OrchestratorAgent {
         case 'SUMMARY':
             result = await new LocalSummarySubAgent().execute(data, resolved, question);
             break;
+        case 'ANOMALY':
+            result = await new LocalAnomalySubAgent().execute(data, resolved, question);
+            break;
         default:
             result = await new LocalSummarySubAgent().execute(data, resolved, question);
     }
 
     emit('COMPILING_INSIGHT', 'Analysis complete. Displaying local report.');
+    await new Promise(resolve => setTimeout(resolve, 500));
     return { ...result, confidence: 1.0, durationMs: 1 }; // Hardcoded 1ms for demo
   }
 }
