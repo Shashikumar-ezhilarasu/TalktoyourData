@@ -24,7 +24,7 @@ export interface DatasetMeta {
 }
 
 export interface PipelineEvent {
-  event: 'intent_classified' | 'columns_resolved' | 'stats_computed' | 'agent_running' | 'insight_ready';
+  event: 'intent_classified' | 'columns_resolved' | 'stats_computed' | 'agent_running' | 'insight_ready' | 'pipeline_update';
   data: any;
   timestamp: string;
 }

@@ -21,9 +21,9 @@ export const TopBar = () => {
             <div className="flex items-center gap-4 mono text-[9px] uppercase tracking-widest text-text-tertiary">
               <span className="text-text-secondary">{dataset.filename}</span>
               <span>·</span>
-              <span>{dataset.rowCount.toLocaleString()} ROWS</span>
+              <span>{dataset.rowCount?.toLocaleString() || '---'} ROWS</span>
               <span>·</span>
-              <span>{dataset.columnCount} COLS</span>
+              <span>{dataset.columnCount || '---'} COLS</span>
             </div>
           </div>
         )}
