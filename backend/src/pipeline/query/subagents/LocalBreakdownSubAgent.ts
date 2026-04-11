@@ -11,8 +11,16 @@ export class LocalBreakdownSubAgent extends LocalBaseSubAgent {
 
   protected generateInsight(stats: any, question: string) {
     const top = stats.topContributor;
+    if (!top) {
+        return {
+            headline: 'No segments found for breakdown',
+            explanation: 'The request for breakdown returned no valid segments from the dataset.',
+            chartData: { type: 'bar', labels: [], values: [] }
+        };
+    }
+    
     return {
-      headline: `${top.dimension} leads with ${top.share}% share`,
+      headline: `${top.dimension} leads with ${stats.grandTotal > 0 ? ((top.value / stats.grandTotal) * 100).toFixed(1) : 0}% share`,
       metricName: 'Grand Total',
       metricValue: stats.grandTotal,
       explanation: `Analysis of ${stats.segments.length} segments shows high concentration in ${top.dimension}. The top contributor accounts for ${top.value.toLocaleString()} units.`,
