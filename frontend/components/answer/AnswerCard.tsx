@@ -2,7 +2,7 @@
 import React from 'react';
 import { QueryResult } from '@/lib/types';
 import { NumberTicker } from '../ui/NumberTicker';
-import { BreakdownBarChart } from '../charts/BreakdownBarChart';
+import { ChartModule } from './ChartModule';
 
 export const AnswerCard = ({ result }: { result: QueryResult }) => {
   return (
@@ -60,36 +60,10 @@ export const AnswerCard = ({ result }: { result: QueryResult }) => {
           </div>
           
           <div className="w-full lg:w-[450px] pt-4">
-            {result.intent === 'BREAKDOWN' && <BreakdownBarChart data={result.chartData} />}
-            
-            {result.intent === 'COMPARISON' && (
-              <div className="flex flex-col gap-6">
-                <div className="flex items-center justify-between p-4 bg-bg-base border border-bg-border">
-                  <span className="mono text-[10px] text-text-tertiary">Group A</span>
-                  <span className="text-xl italic">{result.chartData?.labels?.[0]}</span>
-                </div>
-                <div className="flex items-center justify-center py-4">
-                  <div className="px-4 py-2 bg-accent/10 border border-accent/20 rounded-full mono text-[11px] text-accent">
-                    {result.changeValue}% Variance
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-bg-base border border-bg-border">
-                  <span className="mono text-[10px] text-text-tertiary">Group B</span>
-                  <span className="text-xl italic">{result.chartData?.labels?.[1]}</span>
-                </div>
-              </div>
-            )}
-
-            {result.intent === 'ANOMALY' && (
-              <div className="grid grid-cols-2 gap-4">
-                 {result.chartData?.values?.map((v: any, i: number) => (
-                   <div key={i} className="p-4 bg-red-dim/10 border border-red/20 rounded-sm">
-                      <span className="mono text-[9px] text-red uppercase block mb-1">Outlier</span>
-                      <span className="text-xl font-medium">{v}</span>
-                   </div>
-                 ))}
-              </div>
-            )}
+            <ChartModule 
+                type={result.intent === 'BREAKDOWN' ? 'bar' : result.intent === 'COMPARE' ? 'comparison' : result.intent === 'ANOMALY' ? 'bar' : 'pie'} 
+                data={result.chartData} 
+            />
           </div>
         </div>
       </div>
