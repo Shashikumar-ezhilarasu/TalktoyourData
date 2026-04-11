@@ -9,6 +9,8 @@ import { LocalBreakdownSubAgent } from './subagents/LocalBreakdownSubAgent';
 import { LocalSummarySubAgent } from './subagents/LocalSummarySubAgent';
 import { LocalCompareSubAgent } from './subagents/LocalCompareSubAgent';
 import { LocalAnomalySubAgent } from './subagents/LocalAnomalySubAgent';
+import { GeneralAgent } from './subagents/GeneralAgent';
+import { DataChunk } from '../../models/DataChunk.model';
 
 export class OrchestratorAgent {
   private classifier = new LocalIntentClassifier();
@@ -37,25 +39,30 @@ export class OrchestratorAgent {
     const chunks = await DataChunk.find({ datasetId }).limit(20).sort({ chunkIndex: 1 });
     const data = chunks.flatMap(c => c.rows);
 
-    // 4. Dispatch to Local SubAgent
-    emit('AGENT_EXECUTION', 'Running local statistical interpretation...');
+    // 4. Dispatch to SubAgent (Hybrid)
+    emit('AGENT_EXECUTION', 'Running hybrid intelligence reasoning...');
     
     let result;
-    switch (intent.intent) {
-        case 'COMPARE':
-            result = await new LocalCompareSubAgent().execute(data, resolved, question);
-            break;
-        case 'BREAKDOWN':
-            result = await new LocalBreakdownSubAgent().execute(data, resolved, question);
-            break;
-        case 'SUMMARY':
-            result = await new LocalSummarySubAgent().execute(data, resolved, question);
-            break;
-        case 'ANOMALY':
-            result = await new LocalAnomalySubAgent().execute(data, resolved, question);
-            break;
-        default:
-            result = await new LocalSummarySubAgent().execute(data, resolved, question);
+    if (intent.intent === 'GENERAL') {
+        const context = `Dataset: ${dataset.name}, Columns: ${dataset.headers.join(', ')}`;
+        result = await new GeneralAgent().execute(question, context);
+    } else {
+        switch (intent.intent) {
+            case 'COMPARE':
+                result = await new LocalCompareSubAgent().execute(data, resolved, question);
+                break;
+            case 'BREAKDOWN':
+                result = await new LocalBreakdownSubAgent().execute(data, resolved, question);
+                break;
+            case 'SUMMARY':
+                result = await new LocalSummarySubAgent().execute(data, resolved, question);
+                break;
+            case 'ANOMALY':
+                result = await new LocalAnomalySubAgent().execute(data, resolved, question);
+                break;
+            default:
+                result = await new LocalSummarySubAgent().execute(data, resolved, question);
+        }
     }
 
     emit('COMPILING_INSIGHT', 'Analysis complete. Displaying local report.');

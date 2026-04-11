@@ -14,6 +14,8 @@ export class LocalIntentClassifier {
         intent = 'ANOMALY';
     } else if (q.includes('summary') || q.includes('overview') || q.includes('total')) {
         intent = 'SUMMARY';
+    } else if (q.includes('hi') || q.includes('hello') || q.includes('who') || q.includes('what can') || q.includes('help')) {
+        intent = 'GENERAL';
     }
 
     return {
