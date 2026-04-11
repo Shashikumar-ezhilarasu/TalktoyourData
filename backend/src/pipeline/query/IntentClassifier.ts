@@ -34,8 +34,14 @@ export class IntentClassifier {
       ${context}
     `;
 
-    const result = await model.generateContent([systemPrompt, `Question: ${question}`]);
-    const text = result.response.text().trim();
+    const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: systemPrompt + `\nQuestion: ${question}` }] }],
+        generationConfig: {
+            responseMimeType: "application/json",
+        }
+    });
+
+    const text = result.response.text();
     
     try {
         // Clean markdown if any

@@ -48,8 +48,13 @@ export abstract class BaseSubAgent {
     `;
 
     try {
-        const result = await this.model.generateContent([systemPrompt, `User Question: ${question}`]);
-        const text = result.response.text().trim().replace(/```json|```/g, '');
+        const result = await this.model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: systemPrompt + `\nUser Question: ${question}` }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+            }
+        });
+        const text = result.response.text();
         return JSON.parse(text);
     } catch (err: any) {
         console.error(`SubAgent ${this.intent} failed:`, err);

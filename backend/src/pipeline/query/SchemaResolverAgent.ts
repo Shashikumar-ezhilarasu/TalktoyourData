@@ -6,8 +6,17 @@ export class SchemaResolverAgent {
   async resolve(datasetId: string, question: string) {
     const embedder = getEmbeddingModel();
     
-    // 1. Vector Search
-    const queryResult = await embedder.embedContent(question);
+    const keywords = question.toLowerCase().split(/\W+/);
+
+    // 1 & 2. Vectorization and Lexical Search in Parallel
+    const [queryResult, lexicalResults] = await Promise.all([
+        embedder.embedContent(question),
+        SchemaEmbedding.find({
+            datasetId: new mongoose.Types.ObjectId(datasetId),
+            columnName: { $in: keywords.map(k => new RegExp(k, 'i')) }
+        }).limit(10)
+    ]);
+
     const vector = queryResult.embedding.values;
 
     const vectorResults = await SchemaEmbedding.aggregate([
@@ -23,13 +32,6 @@ export class SchemaResolverAgent {
       },
       { $addFields: { vectorScore: { $meta: 'vectorSearchScore' } } }
     ]);
-
-    // 2. Lexical Match (Basic implementation for BM25-like behavior)
-    const keywords = question.toLowerCase().split(/\W+/);
-    const lexicalResults = await SchemaEmbedding.find({
-        datasetId: new mongoose.Types.ObjectId(datasetId),
-        columnName: { $in: keywords.map(k => new RegExp(k, 'i')) }
-    }).limit(10);
 
     // 3. RRF Merge
     const merged = this.reciprocalRankFusion(vectorResults, lexicalResults);

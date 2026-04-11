@@ -21,7 +21,7 @@ export class QueryController {
       // In a production system, these calls would be inside the agents
       queryEventBus.emitEvent(queryId, 'intent_classified', { status: 'running' });
       
-      const result = await this.orchestrator.execute(datasetId, question);
+      const result = await this.orchestrator.execute(datasetId, question, queryId);
       
       const durationMs = Date.now() - startTime;
 
