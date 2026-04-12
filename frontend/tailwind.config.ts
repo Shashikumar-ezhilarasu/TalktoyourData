@@ -10,38 +10,39 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          base: "#0A0B0D",
-          surface: "#111318",
-          elevated: "#181B22",
-          border: "#1E2128",
+          base: "var(--bg-base)",
+          surface: "var(--bg-surface)",
+          elevated: "var(--bg-elevated)",
+          border: "var(--bg-border)",
         },
         text: {
-          primary: "#F0F2F5",
-          secondary: "#8B90A0",
-          tertiary: "#4A4F5E",
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          tertiary: "var(--text-tertiary)",
         },
         accent: {
-          DEFAULT: "#F5A623",
-          dim: "#3D2A0A",
-          text: "#FFD080",
+          DEFAULT: "var(--accent)",
+          main: "var(--accent)",
+          soft: "var(--accent-glow)",
+          dim: "var(--accent-dim)",
+          text: "var(--bg-base)",
         },
         red: {
           DEFAULT: "#EF4444",
-          dim: "#2D0A0A",
+          dim: "#FEE2E2",
         },
         green: {
           DEFAULT: "#22C55E",
-          dim: "#052E16",
+          dim: "#DCFCE7",
         },
         blue: {
           DEFAULT: "#3B82F6",
-          dim: "#0F1B3D",
+          dim: "#DBEAFE",
         }
       },
       fontFamily: {
-        display: ["var(--font-display)", "serif"],
-        sans: ["var(--font-sans)", "sans-serif"],
-        mono: ["var(--font-mono)", "monospace"],
+        sans: ["system-ui", "sans-serif"],
+        mono: ["monospace"],
       },
     },
   },
