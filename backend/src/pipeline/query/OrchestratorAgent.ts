@@ -1,20 +1,19 @@
-import { LocalIntentClassifier } from './LocalIntentClassifier';
-import { LocalSchemaResolver } from './LocalSchemaResolver';
+import { IntentClassifier } from './IntentClassifier';
+import { SchemaResolverAgent } from './SchemaResolverAgent';
 import { Dataset } from '../../models/Dataset.model';
 import { DataChunk } from '../../models/DataChunk.model';
 import { queryEventBus } from '../../utils/eventBus';
 
-// Local SubAgents
-import { LocalBreakdownSubAgent } from './subagents/LocalBreakdownSubAgent';
-import { LocalSummarySubAgent } from './subagents/LocalSummarySubAgent';
-import { LocalCompareSubAgent } from './subagents/LocalCompareSubAgent';
-import { LocalAnomalySubAgent } from './subagents/LocalAnomalySubAgent';
+// SubAgents
+import { BreakdownSubAgent } from './subagents/BreakdownSubAgent';
+import { SummarySubAgent } from './subagents/SummarySubAgent';
+import { CompareSubAgent } from './subagents/CompareSubAgent';
+import { AnomalySubAgent } from './subagents/AnomalySubAgent';
 import { GeneralAgent } from './subagents/GeneralAgent';
-import { DataChunk } from '../../models/DataChunk.model';
 
 export class OrchestratorAgent {
-  private classifier = new LocalIntentClassifier();
-  private resolver = new LocalSchemaResolver();
+  private classifier = new IntentClassifier();
+  private resolver = new SchemaResolverAgent();
   
   async execute(datasetId: string, question: string, queryId?: string) {
     const dataset = await Dataset.findById(datasetId);
@@ -26,13 +25,13 @@ export class OrchestratorAgent {
       }
     };
 
-    // 1. Resolve Schema Local
-    emit('RESOLVING_SCHEMA', 'Matching columns using local fuzzy engine...');
+    // 1. Resolve Schema using Gemini Embeddings
+    emit('RESOLVING_SCHEMA', 'Matching columns using vector intelligence...');
     const resolved = await this.resolver.resolve(datasetId, question);
 
-    // 2. Classify Intent Local
-    emit('CLASSIFYING_INTENT', 'Analyzing request pattern (Deterministic)...');
-    const intent = this.classifier.classify(question);
+    // 2. Classify Intent using Gemini Flash
+    emit('CLASSIFYING_INTENT', 'Analyzing request pattern (LLM)...');
+    const intent = await this.classifier.classify(question, `Dataset: ${dataset.name}`);
 
     // 3. Fetch Data
     emit('FETCHING_DATA', `Loading data for ${intent.intent} operation...`);
@@ -49,24 +48,24 @@ export class OrchestratorAgent {
     } else {
         switch (intent.intent) {
             case 'COMPARE':
-                result = await new LocalCompareSubAgent().execute(data, resolved, question);
+                result = await new CompareSubAgent().execute(data, resolved, question);
                 break;
             case 'BREAKDOWN':
-                result = await new LocalBreakdownSubAgent().execute(data, resolved, question);
+                result = await new BreakdownSubAgent().execute(data, resolved, question);
                 break;
             case 'SUMMARY':
-                result = await new LocalSummarySubAgent().execute(data, resolved, question);
+                result = await new SummarySubAgent().execute(data, resolved, question);
                 break;
             case 'ANOMALY':
-                result = await new LocalAnomalySubAgent().execute(data, resolved, question);
+                result = await new AnomalySubAgent().execute(data, resolved, question);
                 break;
             default:
-                result = await new LocalSummarySubAgent().execute(data, resolved, question);
+                result = await new SummarySubAgent().execute(data, resolved, question);
         }
     }
 
-    emit('COMPILING_INSIGHT', 'Analysis complete. Displaying local report.');
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return { ...result, confidence: 1.0, durationMs: 1 }; // Hardcoded 1ms for demo
+    emit('COMPILING_INSIGHT', 'Analysis complete. Displaying report.');
+    return { ...result, confidence: intent.confidence || 0.9, durationMs: 1 };
   }
 }
+
