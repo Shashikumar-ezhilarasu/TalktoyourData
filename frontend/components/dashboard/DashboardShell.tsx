@@ -2,29 +2,32 @@
 import React from 'react';
 import { TopBar } from './TopBar';
 import { useDashboardStore } from '@/lib/store';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const DashboardShell = ({ children, sidebar }: { children: React.ReactNode, sidebar: React.ReactNode }) => {
   const { sidebarOpen } = useDashboardStore();
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-bg-base">
+    <div className="flex flex-col h-screen overflow-hidden bg-white selection:bg-black selection:text-white">
       <TopBar />
       
       <div className="flex flex-1 overflow-hidden relative">
-        <aside 
-          className={`
-            border-r border-bg-border bg-bg-surface/50 backdrop-blur-md
-            transition-all duration-300 ease-in-out
-            overflow-y-auto overflow-x-hidden
-            ${sidebarOpen ? 'w-[280px]' : 'w-0 opacity-0'}
-          `}
-        >
-          {sidebar}
-        </aside>
+        <AnimatePresence mode="wait">
+            {sidebarOpen && (
+                <motion.aside 
+                    initial={{ x: -280, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -280, opacity: 0 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                    className="w-[300px] border-r border-bg-border bg-white z-40 h-full overflow-hidden"
+                >
+                    {sidebar}
+                </motion.aside>
+            )}
+        </AnimatePresence>
 
-        <main className="flex-1 flex flex-col relative overflow-hidden h-full bg-bg-base">
-          <div className="absolute inset-0 dot-matrix opacity-[0.02] pointer-events-none" />
-          <div className="relative flex-1 overflow-hidden">
+        <main className="flex-1 relative overflow-hidden h-full bg-white">
+          <div className="relative h-full w-full overflow-hidden">
             {children}
           </div>
         </main>

@@ -1,8 +1,11 @@
 "use client";
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Sparkles, Command, ArrowUp } from 'lucide-react';
 
 export const ChatInput = ({ onSend }: { onSend: (q: string) => void }) => {
   const [question, setQuestion] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleSubmit = () => {
     if (!question.trim()) return;
@@ -11,51 +14,83 @@ export const ChatInput = ({ onSend }: { onSend: (q: string) => void }) => {
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-bg-base via-bg-base/95 to-transparent pb-8">
-      <div className="max-w-4xl mx-auto flex flex-col gap-3">
-        
+    <div className="w-full">
+      <div className="flex flex-col gap-4">
         {/* Intent Shortcuts */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-center">
             {[
-                { label: 'Compare', icon: '📊' },
-                { label: 'Breakdown', icon: '📦' },
-                { label: 'Summary', icon: '📅' },
-                { label: 'Anomaly', icon: '⚠️' }
-            ].map(intent => (
-                <button 
+                { label: 'Compare', color: 'bg-zinc-100 text-zinc-900' },
+                { label: 'Breakdown', color: 'bg-zinc-100 text-zinc-900' },
+                { label: 'Anomaly', color: 'bg-red-50 text-red-600' }
+            ].map((intent, idx) => (
+                <motion.button 
+                  initial={{ y: 5, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: idx * 0.1 }}
                   key={intent.label}
-                  onClick={() => setQuestion(prev => `${intent.label} ${prev}`)}
-                  className="px-3 py-1.5 rounded-full border border-bg-border bg-bg-surface hover:border-accent/40 text-[11px] font-sans text-text-secondary hover:text-text-primary transition-all flex items-center gap-2"
+                  onClick={() => onSend(`${intent.label} query`)}
+                  className={`px-4 py-1.5 rounded-full text-[10px] mono uppercase font-bold tracking-widest ${intent.color} border border-transparent hover:border-black/5 transition-all shadow-sm`}
                 >
-                  <span>{intent.icon}</span>
                   {intent.label}
-                </button>
+                </motion.button>
             ))}
         </div>
 
-        <div className="relative group">
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
-              }
+        <motion.div 
+            animate={{ 
+                scale: isFocused ? 1.01 : 1,
+                boxShadow: isFocused ? "0 20px 40px -10px rgba(0,0,0,0.12)" : "0 4px 12px -2px rgba(0,0,0,0.05)"
             }}
-            placeholder="Ask anything about your data... e.g. 'Why did revenue drop last month?'"
-            className="w-full bg-bg-surface border border-bg-border rounded-xl px-4 py-4 pr-24 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent/50 focus:ring-4 focus:ring-accent-dim/10 resize-none min-h-[56px] transition-all"
-            rows={1}
-          />
-          
-          <button 
-            onClick={handleSubmit}
-            className="absolute right-2.5 top-2.5 px-4 h-9 rounded-lg bg-accent text-bg-base text-[13px] font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
-          >
-            <span>↵</span>
-            Ask
-          </button>
-        </div>
+            className={`relative bg-white border ${isFocused ? 'border-accent-main' : 'border-bg-border'} rounded-2xl p-2 transition-colors duration-500`}
+        >
+          <div className="flex items-end gap-2 px-3 pb-1">
+             <div className="pt-3.5 pb-2">
+                <Sparkles size={16} className={isFocused ? "text-accent-main" : "text-text-tertiary"} />
+             </div>
+             
+             <textarea
+                value={question}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+                placeholder="Examine your data clusters..."
+                className="flex-1 bg-transparent py-3 text-[14px] text-text-primary placeholder:text-text-tertiary focus:outline-none resize-none min-h-[48px] max-h-[200px]"
+                rows={1}
+              />
+
+              <div className="pb-1.5 pr-1">
+                 <button 
+                    onClick={handleSubmit}
+                    disabled={!question.trim()}
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 ${question.trim() ? 'bg-accent-main text-white scale-100 shadow-lg' : 'bg-bg-elevated text-text-tertiary scale-90 opacity-50'}`}
+                  >
+                    <ArrowUp size={18} strokeWidth={2.5} />
+                  </button>
+              </div>
+          </div>
+
+          <div className="flex items-center justify-between px-4 py-1.5 bg-bg-surface/50 border-t border-bg-border/30 rounded-b-2xl">
+             <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                    <Command size={10} className="text-text-tertiary" />
+                    <span className="text-[9px] mono uppercase text-text-tertiary font-bold tracking-tighter">Enter to send</span>
+                </div>
+                <div className="w-1 h-1 rounded-full bg-bg-border" />
+                <span className="text-[9px] mono uppercase text-text-tertiary font-bold tracking-tighter italic">Hybrid IQ Active</span>
+             </div>
+             
+             <div className="flex items-center gap-1 opacity-40">
+                <div className="w-1.5 h-1.5 rounded-full bg-accent-main animate-pulse" />
+                <span className="text-[8px] mono uppercase font-black text-accent-main">Live</span>
+             </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

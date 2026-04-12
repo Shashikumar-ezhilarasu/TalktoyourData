@@ -2,6 +2,8 @@
 import React, { useState, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, FileText, Shield, Zap, Loader2, ArrowRight } from 'lucide-react';
 
 export const DatasetUploader = () => {
   const [isDragging, setIsDragging] = useState(false);
@@ -11,18 +13,10 @@ export const DatasetUploader = () => {
 
   const handleFile = async (file: File) => {
     if (!file) return;
-    
-    // Validation
     if (!file.name.endsWith('.csv') && !file.name.endsWith('.json')) {
       setError('Only .csv and .json files are supported');
       return;
     }
-
-    if (file.size > 50 * 1024 * 1024) {
-      setError('File size must be under 50MB');
-      return;
-    }
-
     try {
       setStatus('uploading');
       const { datasetId } = await api.datasets.upload(file);
@@ -38,49 +32,45 @@ export const DatasetUploader = () => {
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     handleFile(file);
-  }, [handleFile]);
+  }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-12 relative">
-      {/* Background Accent */}
-      <div className="absolute inset-0 dot-matrix opacity-[0.03] pointer-events-none" />
-      
-      <div 
+    <div className="flex flex-col items-center justify-center p-12">
+      <motion.div 
+        animate={{ 
+            scale: isDragging ? 1.02 : 1,
+            backgroundColor: isDragging ? "rgba(0,0,0,0.02)" : "rgba(0,0,0,0)"
+        }}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={onDrop}
-        className={`
-          w-full max-w-lg aspect-square rounded-lg border transition-all duration-500 flex flex-col items-center justify-center p-16 text-center reveal
-          ${isDragging 
-            ? 'border-accent bg-accent/5 shadow-[0_0_40px_rgba(245,166,35,0.1)]' 
-            : 'border-bg-border bg-bg-surface/50 hover:border-text-tertiary'}
-        `}
+        className={`w-full max-w-lg p-12 aspect-[4/5] border border-bg-border rounded-xl flex flex-col items-center justify-center text-center transition-all duration-700 relative group overflow-hidden bg-white shadow-xl shadow-black/[0.02]`}
       >
+        <AnimatePresence mode="wait">
         {status === 'idle' ? (
-          <>
-            <div className="w-10 h-10 border border-bg-border bg-bg-elevated flex items-center justify-center mb-10 rotate-45 transform hover:rotate-180 transition-transform duration-700">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" className="-rotate-45">
-                <path d="M12 2v20M5 9l7-7 7 7"/>
-              </svg>
+          <motion.div 
+            key="idle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center"
+          >
+            <div className="w-16 h-16 rounded-full bg-accent-soft flex items-center justify-center text-accent-main mb-12 shadow-inner group-hover:scale-110 transition-transform duration-500">
+              <Upload size={24} />
             </div>
             
-            <h3 className="text-xl font-medium text-text-primary mb-3">Initialize Analysis</h3>
-            <p className="mono text-[11px] text-text-tertiary uppercase tracking-wider mb-12">Drag CSV or JSON to Begin</p>
+            <h3 className="text-2xl font-medium text-text-primary mb-3">Initialize Analysis</h3>
+            <p className="body text-text-tertiary mb-16 italic font-medium">Drop your dataset to begin interrogation.</p>
             
-            <label className="btn-accent cursor-pointer mb-8">
-              Select Dataset
+            <label className="btn-editorial cursor-pointer flex items-center gap-2 group/btn mb-10">
+              <span>Attach Data</span>
+              <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
               <input type="file" className="hidden" onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) handleFile(file);
               }} />
             </label>
             
-            <div className="mono text-[9px] text-text-tertiary uppercase flex items-center gap-4 mb-8">
-              <div className="w-8 h-[1px] bg-bg-border" />
-              Secure Pipeline Active
-              <div className="w-8 h-[1px] bg-bg-border" />
-            </div>
-
             <button 
               onClick={async () => {
                 setStatus('uploading');
@@ -93,26 +83,58 @@ export const DatasetUploader = () => {
                   setStatus('idle');
                 }
               }}
-              className="mono text-[10px] text-text-tertiary hover:text-accent uppercase tracking-widest transition-colors flex items-center gap-2"
+              className="text-[10px] mono uppercase text-text-tertiary hover:text-accent-main transition-colors flex items-center gap-1.5"
             >
-              <span>or</span> 
-              <span className="underline decoration-1 underline-offset-4">Try Sample Dataset</span>
+              <span>or utilize</span> 
+              <span className="font-bold underline underline-offset-4">Sales Demo Dataset</span>
             </button>
-          </>
+          </motion.div>
         ) : (
-          <div className="flex flex-col items-center w-full max-w-xs">
-            <div className="mono text-[10px] text-accent uppercase tracking-widest mb-6">Pipeline Executing</div>
-            <div className="w-full h-1 bg-bg-border rounded-full overflow-hidden mb-4">
-                <div className="h-full bg-accent animate-[shimmer_2s_infinite]" style={{ width: '45%' }} />
+          <motion.div 
+            key="processing"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center w-full px-8"
+          >
+            <Loader2 size={40} className="animate-spin text-accent-main mb-12 opacity-40" />
+            <span className="text-[11px] mono uppercase font-bold text-accent-main tracking-widest mb-6 block">
+                Executing Secure Pipeline
+            </span>
+            <div className="w-full h-1 bg-bg-elevated rounded-full overflow-hidden mb-6">
+                <motion.div 
+                   initial={{ x: "-100%" }}
+                   animate={{ x: "0%" }}
+                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                   className="h-full bg-accent-main w-full" 
+                />
             </div>
-            <div className="mono text-[10px] text-text-tertiary uppercase">Parsing 1,402 rows...</div>
-          </div>
+            <p className="text-xs text-text-tertiary italic">Cleansing and profiling data segments...</p>
+          </motion.div>
         )}
+        </AnimatePresence>
+      </motion.div>
+
+      <div className="mt-12 flex items-center gap-10">
+         {[
+           { icon: <Shield size={14} />, label: 'PII Scrubbing' },
+           { icon: <Zap size={14} />, label: 'Hyper-Fast' },
+           { icon: <FileText size={14} />, label: 'Auto-ID' }
+         ].map(item => (
+           <div key={item.label} className="flex items-center gap-3 text-text-tertiary">
+              {item.icon}
+              <span className="text-[9px] mono uppercase font-bold tracking-tight">{item.label}</span>
+           </div>
+         ))}
       </div>
+
       {error && (
-        <div className="mt-6 p-4 rounded-lg bg-red-dim border border-red/20 text-red text-xs mono">
-          {error}
-        </div>
+        <motion.div 
+           initial={{ y: 10, opacity: 0 }}
+           animate={{ y: 0, opacity: 1 }}
+           className="mt-10 px-6 py-4 bg-red-50 border border-red-100 rounded-lg"
+        >
+          <span className="text-[10px] mono text-red-600 font-bold uppercase">{error}</span>
+        </motion.div>
       )}
     </div>
   );

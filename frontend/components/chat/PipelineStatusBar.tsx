@@ -1,64 +1,93 @@
 "use client";
 import React from 'react';
 import { useDashboardStore } from '@/lib/store';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Cpu, Search, BrainCircuit, Sparkles, Loader2 } from 'lucide-react';
 
 export const PipelineStatusBar = () => {
   const { activePipeline } = useDashboardStore();
   if (!activePipeline) return null;
 
   const steps = [
-    { key: 'RESOLVING_SCHEMA', label: 'Semantic Mapping' },
-    { key: 'CLASSIFYING_INTENT', label: 'Intent Analysis' },
-    { key: 'AGENT_EXECUTION', label: 'Reasoning Engine' },
-    { key: 'COMPILING_INSIGHT', label: 'Insight Generation' }
+    { key: 'RESOLVING_SCHEMA', label: 'Semantic Mapping', icon: <Search size={14} /> },
+    { key: 'CLASSIFYING_INTENT', label: 'Intent Analysis', icon: <BrainCircuit size={14} /> },
+    { key: 'AGENT_EXECUTION', label: 'Reasoning Engine', icon: <Cpu size={14} /> },
+    { key: 'COMPILING_INSIGHT', label: 'Insight Generation', icon: <Sparkles size={14} /> }
   ];
 
   const latestUpdate = [...activePipeline.events].reverse().find(e => e.event === 'pipeline_update');
-  const currentMessage = latestUpdate?.data?.message || 'Orchestrator Routing...';
+  const currentMessage = latestUpdate?.data?.message || 'Handshaking with Data Stream...';
+  const currentStage = latestUpdate?.data?.stage || 'INITIALIZING';
 
   return (
-    <div className="mx-auto max-w-4xl p-6 mb-8 animate-reveal">
-      <div className="card !p-4 border-accent-dim/30 bg-accent-dim/5 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-accent status-dot-active" />
-            <span className="mono text-[10px] uppercase text-accent tracking-[0.1em] font-bold animate-pulse">{currentMessage}</span>
-          </div>
-          <span className="mono text-[10px] text-tertiary">Query ID: {activePipeline.queryId.slice(0, 8)}</span>
-        </div>
+    <AnimatePresence>
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: -20, opacity: 0 }}
+        className="mx-auto max-w-5xl p-6 mb-10"
+      >
+        <div className="bg-white border border-bg-border rounded-lg p-8 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden">
+          {/* Active Shimmer */}
+          <motion.div 
+            animate={{ x: ['-100%', '100%'] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-main/20 to-transparent"
+          />
 
-        <div className="flex gap-4">
-          {steps.map((step, idx) => {
-            const isDone = activePipeline.events.some(e => 
-              e.event === step.key || (e.event === 'pipeline_update' && e.data.stage === step.key)
-            ) || (idx < steps.findIndex(s => activePipeline.events.some(e => e.data?.stage === s.key || e.event === s.key)));
-            
-            // Smarter isDone: if any future step is done, current is done
-            const currentStepIdx = steps.findIndex(s => s.key === step.key);
-            const anyFutureStepStarted = activePipeline.events.some(e => {
-                const stage = e.data?.stage || e.event;
-                const stageIdx = steps.findIndex(s => s.key === stage);
-                return stageIdx > currentStepIdx;
-            });
-
-            const completed = isDone || anyFutureStepStarted;
-            const active = !completed && (idx === 0 || anyFutureStepStarted || activePipeline.events.some(e => {
-                 const stage = e.data?.stage || e.event;
-                 const stageIdx = steps.findIndex(s => s.key === stage);
-                 return stageIdx === currentStepIdx - 1;
-            }));
-
-            return (
-              <div key={step.key} className="flex-1 flex flex-col gap-2">
-                <div className={`h-1 rounded-full transition-all duration-700 ${completed ? 'bg-accent' : active ? 'bg-accent/30 shadow-[0_0_10px_rgba(245,166,35,0.2)]' : 'bg-bg-border'}`} />
-                <span className={`text-[9px] mono uppercase truncate ${completed || active ? 'text-accent' : 'text-tertiary'}`}>
-                  {step.label}
-                </span>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+            <div className="flex items-center gap-5">
+              <div className="w-12 h-12 rounded-full bg-accent-soft flex items-center justify-center text-accent-main relative">
+                 <Loader2 size={24} className="animate-spin opacity-20 absolute" />
+                 <Cpu size={20} className="relative z-10" />
               </div>
-            );
-          })}
+              <div className="space-y-1">
+                <span className="text-[10px] mono uppercase tracking-widest text-text-tertiary block">Processing Operation: {activePipeline.queryId.slice(0, 8)}</span>
+                <h3 className="text-xl font-medium tracking-tight text-text-primary italic">
+                  {currentMessage}
+                </h3>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 px-4 py-2 bg-zinc-50 border border-bg-border rounded-md">
+                <div className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
+                <span className="text-[10px] mono uppercase font-bold tracking-tight">Active Trace</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {steps.map((step, idx) => {
+              const currentStepIdx = steps.findIndex(s => s.key === currentStage);
+              const targetStepIdx = steps.findIndex(s => s.key === step.key);
+              
+              const isCompleted = targetStepIdx < currentStepIdx || activePipeline.events.some(e => e.event === step.key);
+              const isActive = currentStage === step.key;
+
+              return (
+                <div key={step.key} className="space-y-3">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className={`p-1.5 rounded-sm transition-colors duration-500 ${isCompleted ? 'bg-black text-white' : isActive ? 'bg-accent-soft text-accent-main' : 'bg-bg-elevated text-text-tertiary'}`}>
+                      {step.icon}
+                    </div>
+                    <span className={`text-[10px] mono uppercase font-bold tracking-wider ${isCompleted || isActive ? 'text-accent-main' : 'text-text-tertiary'}`}>
+                       {step.label}
+                    </span>
+                  </div>
+                  
+                  <div className="h-1 bg-bg-border rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: isCompleted ? "100%" : isActive ? "60%" : "0%" }}
+                      transition={{ duration: 1, ease: "easeInOut" }}
+                      className={`h-full ${isCompleted ? 'bg-black' : 'bg-zinc-300'}`}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
