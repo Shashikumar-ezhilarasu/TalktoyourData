@@ -1,8 +1,8 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IColumnProfile {
   name: string;
-  type: 'number' | 'string' | 'date' | 'boolean' | 'category';
+  type: "number" | "string" | "date" | "boolean" | "category";
   nullCount: number;
   nullPct: number;
   uniqueCount: number;
@@ -22,7 +22,10 @@ export interface IColumnProfile {
 
 const ColumnProfileSchema = new Schema<IColumnProfile>({
   name: String,
-  type: { type: String, enum: ['number', 'string', 'date', 'boolean', 'category'] },
+  type: {
+    type: String,
+    enum: ["number", "string", "date", "boolean", "category"],
+  },
   nullCount: Number,
   nullPct: Number,
   uniqueCount: Number,
@@ -37,10 +40,11 @@ const ColumnProfileSchema = new Schema<IColumnProfile>({
   categories: [String],
   likelyMetric: Boolean,
   likelyDimension: Boolean,
-  likelyDateColumn: Boolean
+  likelyDateColumn: Boolean,
 });
 
 export interface IDataset extends Document {
+  userId: mongoose.Types.ObjectId;
   name: string;
   filename: string;
   uploadedAt: Date;
@@ -52,12 +56,18 @@ export interface IDataset extends Document {
   piiColumnsRedacted: string[];
   isChunked: boolean;
   chunkCount: number;
-  processingStatus: 'pending' | 'processing' | 'ready' | 'error';
+  processingStatus: "pending" | "processing" | "ready" | "error";
   errorMessage?: string;
   sampleRows: any[][];
 }
 
 const DatasetSchema = new Schema<IDataset>({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+    index: true,
+  },
   name: { type: String, required: true },
   filename: String,
   uploadedAt: { type: Date, default: Date.now },
@@ -71,14 +81,15 @@ const DatasetSchema = new Schema<IDataset>({
   chunkCount: { type: Number, default: 0 },
   processingStatus: {
     type: String,
-    enum: ['pending', 'processing', 'ready', 'error'],
-    default: 'pending'
+    enum: ["pending", "processing", "ready", "error"],
+    default: "pending",
   },
   errorMessage: String,
-  sampleRows: { type: [[Schema.Types.Mixed]], default: [] }
+  sampleRows: { type: [[Schema.Types.Mixed]], default: [] },
 });
 
 DatasetSchema.index({ uploadedAt: -1 });
 DatasetSchema.index({ processingStatus: 1 });
+DatasetSchema.index({ userId: 1, uploadedAt: -1 });
 
-export const Dataset = mongoose.model<IDataset>('Dataset', DatasetSchema);
+export const Dataset = mongoose.model<IDataset>("Dataset", DatasetSchema);
