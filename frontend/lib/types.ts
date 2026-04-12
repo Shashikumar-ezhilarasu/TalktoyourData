@@ -1,8 +1,13 @@
-export type IntentType = 'COMPARE' | 'BREAKDOWN' | 'SUMMARY' | 'ANOMALY' | 'GENERAL';
+export type IntentType =
+  | "COMPARE"
+  | "BREAKDOWN"
+  | "SUMMARY"
+  | "ANOMALY"
+  | "GENERAL";
 
 export interface ColumnProfile {
   name: string;
-  type: 'number' | 'string' | 'date' | 'boolean' | 'category';
+  type: "number" | "string" | "date" | "boolean" | "category";
   nullPct: number;
   uniqueCount: number;
   sampleValues: any[];
@@ -17,20 +22,26 @@ export interface DatasetMeta {
   rowCount: number;
   columnCount: number;
   headers: string[];
-  processingStatus: 'pending' | 'processing' | 'ready' | 'error'];
+  processingStatus: "pending" | "processing" | "ready" | "error";
   columnProfiles: ColumnProfile[];
   piiColumnsRedacted: string[];
   uploadedAt: string;
 }
 
 export interface PipelineEvent {
-  event: 'intent_classified' | 'columns_resolved' | 'stats_computed' | 'agent_running' | 'insight_ready' | 'pipeline_update';
+  event:
+    | "intent_classified"
+    | "columns_resolved"
+    | "stats_computed"
+    | "agent_running"
+    | "insight_ready"
+    | "pipeline_update";
   data: any;
   timestamp: string;
 }
 
 export interface ChartData {
-  type: 'bar' | 'line' | 'pie' | 'comparison' | 'scatter';
+  type: "bar" | "line" | "pie" | "comparison" | "scatter";
   labels: string[];
   values: number[];
   secondaryValues?: number[];
@@ -38,12 +49,13 @@ export interface ChartData {
 
 export interface QueryResult {
   _id: string;
+  question?: string;
   intent: IntentType;
   headline: string;
   metricName: string;
   metricValue: number;
   changeValue: number;
-  changeDirection: 'up' | 'down' | 'flat' | 'none';
+  changeDirection: "up" | "down" | "flat" | "none";
   explanation: string;
   chartData: ChartData;
   anomalyDetected: boolean;
@@ -66,14 +78,28 @@ export interface QueryResult {
   createdAt: string;
 }
 
+export interface ChatSessionSummary {
+  _id: string;
+  title: string;
+  updatedAt: string;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  _id: string;
+  question: string;
+  result: QueryResult;
+  createdAt: string;
+}
+
 export interface ClarificationResponse {
-  type: 'CLARIFICATION';
+  type: "CLARIFICATION";
   question: string;
   options?: string[];
 }
 
 export interface ProcessingStatus {
-  status: 'pending' | 'processing' | 'ready' | 'error';
+  status: "pending" | "processing" | "ready" | "error";
   progress?: number;
   errorMessage?: string;
 }
