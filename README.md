@@ -1,4 +1,5 @@
-![alt text](image.png)
+![WhatsApp Image 2026-04-12 at 11 15 34 PM](https://github.com/user-attachments/assets/ad640c0d-f3e7-4862-b591-6a8fe760c60c)
+
 
 # DataLens: Talk to Your Data
 
