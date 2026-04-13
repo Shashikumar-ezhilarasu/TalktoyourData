@@ -692,6 +692,22 @@ npm run dev
 | http://localhost:3000 | DataLens frontend |
 | http://localhost:4000/api/health | Backend health check |
 
+### Step 7: Running Tests
+
+To run the unit and integration tests for both the backend and frontend:
+
+```bash
+# Run backend tests
+cd backend
+npm install -D vitest @types/vitest
+npm test
+
+# Run frontend tests
+cd ../frontend
+npm install -D vitest @types/vitest
+npm test
+```
+
 ---
 
 ## First Run Walkthrough
