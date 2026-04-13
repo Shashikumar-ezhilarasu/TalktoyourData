@@ -19,7 +19,7 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = auth.getToken();
+  const token = await auth.getTokenAsync();
   const headers = new Headers(options?.headers || {});
 
   if (token) {
@@ -61,7 +61,13 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       }),
-    me: () => request<{ user: AuthUser }>("/auth/me"),
+    me: () => request<{ user: AuthUser & { contextMemory?: string; datasetCount?: number } }>("/auth/me"),
+    updateProfile: (contextMemory: string) =>
+      request<{ message: string; contextMemory: string }>("/auth/me/context", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contextMemory }),
+      }),
   },
   datasets: {
     upload: async (
@@ -150,7 +156,7 @@ export const api = {
       }),
     getMessages: (sessionId: string) =>
       request<{
-        session: { _id: string; title: string };
+        session: { _id: string; title: string, datasetId?: string };
         messages: Array<{
           _id: string;
           question: string;

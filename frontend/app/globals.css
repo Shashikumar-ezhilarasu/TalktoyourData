@@ -61,7 +61,7 @@
   }
 
   .card-prime {
-    @apply p-8 bg-bg-base border border-bg-border hover:border-text-primary/10 transition-all duration-500 relative;
+    @apply p-8 bg-bg-base border border-bg-border hover:border-text-tertiary transition-all duration-500 relative;
     box-shadow:
       0 1px 3px 0 rgba(0, 0, 0, 0.02),
       0 1px 2px -1px rgba(0, 0, 0, 0.03);

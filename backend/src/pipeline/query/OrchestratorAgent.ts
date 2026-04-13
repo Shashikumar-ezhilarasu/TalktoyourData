@@ -15,7 +15,7 @@ export class OrchestratorAgent {
   private classifier = new IntentClassifier();
   private resolver = new SchemaResolverAgent();
   
-  async execute(datasetId: string, question: string, queryId?: string) {
+  async execute(datasetId: string, question: string, queryId?: string, contextMemory: string = "") {
     const dataset = await Dataset.findById(datasetId);
     if (!dataset) throw new Error('Dataset not found');
 
@@ -43,7 +43,8 @@ export class OrchestratorAgent {
     
     let result;
     if (intent.intent === 'GENERAL') {
-        const context = `Dataset: ${dataset.name}, Columns: ${dataset.headers.join(', ')}`;
+        const memoryString = contextMemory ? `User Context Memory (Prioritize this): ${contextMemory}` : "";
+        const context = `Dataset: ${dataset.name}, Columns: ${dataset.headers.join(', ')}\n${memoryString}`;
         result = await new GeneralAgent().execute(question, context);
     } else {
         switch (intent.intent) {
