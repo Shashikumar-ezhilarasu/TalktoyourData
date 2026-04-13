@@ -1,9 +1,10 @@
 import { Router, Request, Response } from "express";
 import { queryEventBus } from "../utils/eventBus";
+import { optionalAuth } from "../middleware/auth";
 
 const router = Router();
 
-router.get("/:queryId", (req: Request, res: Response) => {
+router.get("/:queryId", optionalAuth, (req: Request, res: Response) => {
   const rawQueryId = req.params.queryId;
   if (typeof rawQueryId !== "string") {
     return res.status(400).json({ error: "Invalid queryId" });

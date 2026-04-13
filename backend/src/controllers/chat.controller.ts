@@ -6,14 +6,11 @@ import { Query } from "../models/Query.model";
 export class ChatController {
   async ensureSession(req: Request, res: Response) {
     try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthenticated" });
-      }
+      const userId = req.user?.userId || "anonymous";
 
       const { datasetId, title, forceNew } = req.body || {};
       const query: Record<string, any> = {
-        userId: new mongoose.Types.ObjectId(userId),
+        userId: userId,
       };
 
       if (datasetId) {
@@ -44,14 +41,11 @@ export class ChatController {
 
   async listSessions(req: Request, res: Response) {
     try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthenticated" });
-      }
+      const userId = req.user?.userId || "anonymous";
 
       const { datasetId } = req.query;
       const query: Record<string, any> = {
-        userId: new mongoose.Types.ObjectId(userId),
+        userId: userId,
       };
       if (typeof datasetId === "string" && datasetId) {
         query.datasetId = new mongoose.Types.ObjectId(datasetId);
@@ -70,10 +64,7 @@ export class ChatController {
 
   async getMessages(req: Request, res: Response) {
     try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthenticated" });
-      }
+      const userId = req.user?.userId || "anonymous";
 
       const rawSessionId = req.params.sessionId;
       if (typeof rawSessionId !== "string") {
@@ -85,7 +76,7 @@ export class ChatController {
 
       const session = await ChatSession.findOne({
         _id: new mongoose.Types.ObjectId(sessionId),
-        userId: new mongoose.Types.ObjectId(userId),
+        userId: userId,
       });
 
       if (!session) {
@@ -93,7 +84,7 @@ export class ChatController {
       }
 
       const messages = await Query.find({
-        userId: new mongoose.Types.ObjectId(userId),
+        userId: userId,
         sessionId: new mongoose.Types.ObjectId(sessionId),
       })
         .sort({ createdAt: -1 })
@@ -118,10 +109,7 @@ export class ChatController {
 
   async renameSession(req: Request, res: Response) {
     try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthenticated" });
-      }
+      const userId = req.user?.userId || "anonymous";
 
       const rawSessionId = req.params.sessionId;
       const { title } = req.body || {};
@@ -138,7 +126,7 @@ export class ChatController {
       const session = await ChatSession.findOneAndUpdate(
         {
           _id: new mongoose.Types.ObjectId(rawSessionId),
-          userId: new mongoose.Types.ObjectId(userId),
+          userId: userId,
         },
         { $set: { title: cleanedTitle } },
         { new: true },
@@ -158,10 +146,7 @@ export class ChatController {
 
   async deleteSession(req: Request, res: Response) {
     try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthenticated" });
-      }
+      const userId = req.user?.userId || "anonymous";
 
       const rawSessionId = req.params.sessionId;
       if (typeof rawSessionId !== "string") {
@@ -170,7 +155,7 @@ export class ChatController {
 
       const sessionFilter = {
         _id: new mongoose.Types.ObjectId(rawSessionId),
-        userId: new mongoose.Types.ObjectId(userId),
+        userId: userId,
       };
 
       const session = await ChatSession.findOne(sessionFilter);
@@ -179,7 +164,7 @@ export class ChatController {
       }
 
       await Query.deleteMany({
-        userId: new mongoose.Types.ObjectId(userId),
+        userId: userId,
         sessionId: session._id,
       });
 

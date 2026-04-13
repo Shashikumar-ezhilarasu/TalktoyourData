@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { ChatController } from "../controllers/chat.controller";
-import { requireAuth } from "../middleware/auth";
+import { requireAuth, optionalAuth } from "../middleware/auth";
 
 const router = Router();
 const chatController = new ChatController();
 
-router.use(requireAuth);
+router.use(optionalAuth);
 
 router.post("/sessions/ensure", (req, res) =>
   chatController.ensureSession(req, res),

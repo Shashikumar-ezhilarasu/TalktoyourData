@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IQuery extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: string;
   sessionId: mongoose.Types.ObjectId;
   datasetId: mongoose.Types.ObjectId;
   question: string;
@@ -16,8 +16,7 @@ export interface IQuery extends Document {
 
 const QuerySchema = new Schema<IQuery>({
   userId: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
+    type: String,
     required: true,
     index: true,
   },

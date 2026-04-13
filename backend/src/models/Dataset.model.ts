@@ -44,7 +44,7 @@ const ColumnProfileSchema = new Schema<IColumnProfile>({
 });
 
 export interface IDataset extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: string;
   name: string;
   filename: string;
   uploadedAt: Date;
@@ -63,8 +63,7 @@ export interface IDataset extends Document {
 
 const DatasetSchema = new Schema<IDataset>({
   userId: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
+    type: String,
     required: true,
     index: true,
   },

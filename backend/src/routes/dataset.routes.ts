@@ -4,14 +4,14 @@ import { Queue } from "bullmq";
 import { Dataset } from "../models/Dataset.model";
 import redis, { getIsRedisAvailable } from "../config/redis";
 import { ingestionWorkerLogic } from "../workers/ingestion.worker";
+import { requireAuth, optionalAuth } from "../middleware/auth";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/upload", upload.single("file"), async (req, res) => {
+router.post("/upload", optionalAuth, upload.single("file"), async (req, res) => {
   try {
-    const userId = req.user?.userId;
-    if (!userId) return res.status(401).json({ error: "Unauthenticated" });
+    const userId = req.user?.userId || "anonymous";
 
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
@@ -49,10 +49,9 @@ router.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-router.get("/sample", async (req, res) => {
+router.get("/sample", optionalAuth, async (req, res) => {
   try {
-    const userId = req.user?.userId;
-    if (!userId) return res.status(401).json({ error: "Unauthenticated" });
+    const userId = req.user?.userId || "anonymous";
 
     const fs = require("fs");
     const path = require("path");
@@ -78,7 +77,7 @@ router.get("/sample", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   const userId = req.user?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthenticated" });
 
@@ -90,7 +89,7 @@ router.get("/", async (req, res) => {
   res.json({ datasets });
 });
 
-router.post("/claim-legacy", async (req, res) => {
+router.post("/claim-legacy", requireAuth, async (req, res) => {
   const userId = req.user?.userId;
   if (!userId) return res.status(401).json({ error: "Unauthenticated" });
 
@@ -103,24 +102,26 @@ router.post("/claim-legacy", async (req, res) => {
   res.json({ claimed: claimResult.modifiedCount });
 });
 
-router.get("/:id/status", async (req, res) => {
-  const userId = req.user?.userId;
-  if (!userId) return res.status(401).json({ error: "Unauthenticated" });
+router.get("/:id/status", optionalAuth, async (req, res) => {
+  const userId = req.user?.userId || "anonymous";
 
-  const dataset = await Dataset.findOne({ _id: req.params.id, userId }).select(
-    "processingStatus errorMessage",
+  const dataset = await Dataset.findOne({ _id: req.params.id }).select(
+    "processingStatus errorMessage userId",
   );
-  if (!dataset) return res.status(404).json({ error: "Dataset not found" });
+  if (!dataset || (dataset.userId !== "anonymous" && dataset.userId !== userId)) {
+    return res.status(404).json({ error: "Dataset not found" });
+  }
 
   res.json(dataset);
 });
 
-router.get("/:id", async (req, res) => {
-  const userId = req.user?.userId;
-  if (!userId) return res.status(401).json({ error: "Unauthenticated" });
+router.get("/:id", optionalAuth, async (req, res) => {
+  const userId = req.user?.userId || "anonymous";
 
-  const dataset = await Dataset.findOne({ _id: req.params.id, userId });
-  if (!dataset) return res.status(404).json({ error: "Dataset not found" });
+  const dataset = await Dataset.findOne({ _id: req.params.id });
+  if (!dataset || (dataset.userId !== "anonymous" && dataset.userId !== userId)) {
+    return res.status(404).json({ error: "Dataset not found" });
+  }
 
   res.json(dataset);
 });

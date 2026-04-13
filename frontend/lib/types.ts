@@ -81,6 +81,7 @@ export interface QueryResult {
 export interface ChatSessionSummary {
   _id: string;
   title: string;
+  datasetId?: string;
   updatedAt: string;
   createdAt: string;
 }

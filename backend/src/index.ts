@@ -28,9 +28,9 @@ app.use(express.json({ limit: "50mb" }));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
-app.use("/api/datasets", requireAuth, datasetRoutes);
-app.use("/api/query", requireAuth, queryRoutes);
-app.use("/api/stream", requireAuth, streamRoutes);
+app.use("/api/datasets", datasetRoutes);
+app.use("/api/query", queryRoutes);
+app.use("/api/stream", streamRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {

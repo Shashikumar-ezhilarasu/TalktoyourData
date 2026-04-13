@@ -3,18 +3,15 @@ import { OrchestratorAgent } from "../pipeline/query/OrchestratorAgent";
 import { queryEventBus } from "../utils/eventBus";
 import { Query } from "../models/Query.model";
 import { ChatSession } from "../models/ChatSession.model";
+import { User } from "../models/User.model";
 
 export class QueryController {
   private orchestrator = new OrchestratorAgent();
 
   async submitQuery(req: Request, res: Response) {
     const { datasetId, question, sessionId } = req.body;
-    const userId = req.user?.userId;
+    const userId = req.user?.userId || "anonymous";
     const queryId = Math.random().toString(36).substring(7);
-
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthenticated" });
-    }
 
     if (!datasetId || !question) {
       return res
@@ -47,10 +44,14 @@ export class QueryController {
         status: "running",
       });
 
+      const userDb = req.user?.email ? await User.findOne({ email: req.user.email }) : null;
+      const contextMemory = userDb?.contextMemory || "";
+
       const result = await this.orchestrator.execute(
         datasetId,
         question,
         queryId,
+        contextMemory
       );
 
       const durationMs = Date.now() - startTime;

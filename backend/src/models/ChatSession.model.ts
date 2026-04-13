@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IChatSession extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: string;
   datasetId?: mongoose.Types.ObjectId;
   title: string;
   createdAt: Date;
@@ -12,8 +12,7 @@ export interface IChatSession extends Document {
 const ChatSessionSchema = new Schema<IChatSession>(
   {
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       required: true,
       index: true,
     },
