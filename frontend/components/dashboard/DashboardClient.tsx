@@ -4,6 +4,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { PipelineStatusBar } from "@/components/chat/PipelineStatusBar";
 import { AnswerCard } from "@/components/answer/AnswerCard";
+import Link from "next/link";
 import { useDashboardStore } from "@/lib/store";
 import { api } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -272,12 +273,15 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
       sidebar={
         <div className="flex flex-col h-full py-8">
           <div className="px-6 mb-10">
-            <div className="flex items-center gap-3 px-3 py-2 rounded-md bg-accent-main text-white shadow-sm mb-6">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-3 px-3 py-2 rounded-md bg-accent-main text-white shadow-sm mb-6 hover:opacity-90 transition-opacity"
+            >
               <LayoutGrid size={14} />
               <span className="text-[11px] mono uppercase font-bold tracking-widest">
                 Dashboard
               </span>
-            </div>
+            </Link>
 
             <button
               onClick={createNewSession}

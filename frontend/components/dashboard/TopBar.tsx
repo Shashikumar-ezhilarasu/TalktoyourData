@@ -33,7 +33,7 @@ export const TopBar = () => {
       className="h-[60px] border-b border-bg-border bg-bg-base/70 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50"
     >
       <div className="flex items-center gap-12">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
           <div className="w-6 h-6 bg-accent-main rounded-sm flex items-center justify-center rotate-45 group-hover:rotate-90 transition-transform duration-500">
             <span className="text-white text-[10px] -rotate-45 group-hover:-rotate-90 transition-transform duration-500">
               ✦
