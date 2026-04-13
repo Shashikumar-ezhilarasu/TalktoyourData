@@ -41,6 +41,13 @@ app.get("/api/health", (req, res) => {
 const bootstrap = async () => {
   try {
     await connectDB();
+
+    if (!process.env.CLERK_SECRET_KEY && !process.env.CLERK_JWT_KEY) {
+      console.warn(
+        "[Auth] Missing Clerk backend config. Set CLERK_SECRET_KEY and/or CLERK_JWT_KEY in backend .env",
+      );
+    }
+
     app.listen(PORT, () => {
       console.log(`
 🚀 DataLens Backend Running

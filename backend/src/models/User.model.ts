@@ -22,6 +22,4 @@ const UserSchema = new Schema<IUser>({
   createdAt: { type: Date, default: Date.now },
 });
 
-UserSchema.index({ email: 1 }, { unique: true });
-
 export const User = mongoose.model<IUser>("User", UserSchema);
