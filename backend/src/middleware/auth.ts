@@ -1,10 +1,22 @@
 import { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import { createClerkClient, verifyToken } from "@clerk/backend";
+import { User } from "../models/User.model";
+
+const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 export interface AuthUser {
   userId: string;
   email: string;
   name: string;
+}
+
+// Extend Express Request type
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthUser;
+    }
+  }
 }
 
 const getTokenFromRequest = (req: Request) => {
@@ -22,27 +34,76 @@ const getTokenFromRequest = (req: Request) => {
   return null;
 };
 
-export const requireAuth = (
+export const requireAuth = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   const token = getTokenFromRequest(req);
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret) {
-    return res.status(500).json({ error: "JWT_SECRET is not configured" });
-  }
 
   if (!token) {
     return res.status(401).json({ error: "Authentication token missing" });
   }
 
   try {
-    const decoded = jwt.verify(token, secret) as AuthUser;
-    req.user = decoded;
+    const verifiedToken = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! });
+    const clerkUser = await clerk.users.getUser(verifiedToken.sub);
+    
+    // Sync with MongoDB
+    let mongoUser = await User.findOne({ email: clerkUser.emailAddresses[0].emailAddress });
+    
+    if (!mongoUser) {
+      mongoUser = await User.create({
+        email: clerkUser.emailAddresses[0].emailAddress,
+        name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "User",
+        passwordHash: "clerk-managed", // Placeholder as Clerk handles password
+      });
+    }
+
+    req.user = {
+      userId: verifiedToken.sub, // Clerk User ID (string)
+      email: clerkUser.emailAddresses[0].emailAddress,
+      name: mongoUser.name,
+    };
+
     return next();
-  } catch {
+  } catch (error) {
+    console.error("Clerk auth error:", error);
     return res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
+
+export const optionalAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const token = getTokenFromRequest(req);
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const verifiedToken = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! });
+    const clerkUser = await clerk.users.getUser(verifiedToken.sub);
+    
+    let mongoUser = await User.findOne({ email: clerkUser.emailAddresses[0].emailAddress });
+    if (!mongoUser) {
+      mongoUser = await User.create({
+        email: clerkUser.emailAddresses[0].emailAddress,
+        name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "User",
+        passwordHash: "clerk-managed",
+      });
+    }
+
+    req.user = {
+      userId: verifiedToken.sub,
+      email: clerkUser.emailAddresses[0].emailAddress,
+      name: mongoUser.name,
+    };
+    return next();
+  } catch (error) {
+    return next(); // Ignore auth errors for optional
   }
 };

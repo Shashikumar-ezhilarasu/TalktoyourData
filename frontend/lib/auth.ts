@@ -1,38 +1,75 @@
+/**
+ * Auth bridge for Clerk integration.
+ * This file replaces the previous custom auth logic with Clerk.
+ */
+
 export interface AuthUser {
   id: string;
   email: string;
   name: string;
 }
 
-const TOKEN_KEY = "datalens_token";
-const USER_KEY = "datalens_user";
+// Since hooks can't be used in api.ts (which is a plain JS file),
+// we use this bridge to store and retrieve the token.
+// In a real app, you might use a more robust state management or 
+// pass the token from the component level.
 
-const isBrowser = () => typeof window !== "undefined";
+let _token: string | null = null;
+let _user: AuthUser | null = null;
 
 export const auth = {
   getToken: () => {
-    if (!isBrowser()) return null;
-    return localStorage.getItem(TOKEN_KEY);
+    if (typeof window !== "undefined" && (window as any).Clerk) {
+        return _token; 
+    }
+    return _token;
   },
-  setSession: (token: string, user: AuthUser) => {
-    if (!isBrowser()) return;
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-  },
-  clearSession: () => {
-    if (!isBrowser()) return;
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-  },
-  getUser: (): AuthUser | null => {
-    if (!isBrowser()) return null;
-    const raw = localStorage.getItem(USER_KEY);
-    if (!raw) return null;
 
-    try {
-      return JSON.parse(raw) as AuthUser;
-    } catch {
-      return null;
+  getTokenAsync: async () => {
+    if (typeof window !== "undefined" && (window as any).Clerk && (window as any).Clerk.session) {
+        try {
+            return await (window as any).Clerk.session.getToken();
+        } catch (e) {
+            console.error("Clerk session getToken error:", e);
+        }
+    }
+    return _token;
+  },
+  
+  getUser: () => _user,
+  
+  setSession: (token: string, user: AuthUser) => {
+    _token = token;
+    _user = user;
+    if (typeof window !== "undefined") {
+        localStorage.setItem("datalens_token", token);
+        localStorage.setItem("datalens_user", JSON.stringify(user));
     }
   },
+  
+  clearSession: () => {
+    _token = null;
+    _user = null;
+    if (typeof window !== "undefined") {
+        localStorage.removeItem("datalens_token");
+        localStorage.removeItem("datalens_user");
+    }
+  },
+  
+  init: () => {
+    if (typeof window !== "undefined") {
+        _token = localStorage.getItem("datalens_token");
+        const savedUser = localStorage.getItem("datalens_user");
+        if (savedUser) {
+            try {
+                _user = JSON.parse(savedUser);
+            } catch {
+                _user = null;
+            }
+        }
+    }
+  }
 };
+
+// Auto-init on load
+auth.init();

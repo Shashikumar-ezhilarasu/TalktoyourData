@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { SignOptions } from "jsonwebtoken";
 import { User } from "../models/User.model";
+import { Dataset } from "../models/Dataset.model";
 
 const createToken = (payload: {
   userId: string;
@@ -101,12 +102,43 @@ export class AuthController {
       return res.status(401).json({ error: "Unauthenticated" });
     }
 
-    return res.json({
-      user: {
-        id: req.user.userId,
-        email: req.user.email,
-        name: req.user.name,
-      },
-    });
+    try {
+      const dbUser = await User.findOne({ email: req.user.email });
+      const datasetCount = await Dataset.countDocuments({ userId: req.user.userId });
+
+      return res.json({
+        user: {
+          id: req.user.userId,
+          email: req.user.email,
+          name: req.user.name,
+          contextMemory: dbUser?.contextMemory || "",
+          datasetCount,
+        },
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  }
+
+  async updateProfile(req: Request, res: Response) {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthenticated" });
+    }
+
+    try {
+      const { contextMemory } = req.body;
+      const dbUser = await User.findOneAndUpdate(
+        { email: req.user.email },
+        { contextMemory },
+        { new: true }
+      );
+
+      return res.json({
+        message: "Profile updated successfully",
+        contextMemory: dbUser?.contextMemory || "",
+      });
+    } catch (error: any) {
+      return res.status(500).json({ error: "Failed to update profile", details: error.message });
+    }
   }
 }
