@@ -15,8 +15,12 @@ export const ClerkTokenSync = () => {
           auth.setSession(token, {
             id: user.id,
             email: user.emailAddresses[0].emailAddress,
-            name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User",
+            name:
+              `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User",
           });
+        } else {
+          // Prevent stale token from a previous auth flow from being reused.
+          auth.clearSession();
         }
       } else if (isAuthLoaded && !user) {
         auth.clearSession();
