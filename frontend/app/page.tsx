@@ -1,8 +1,8 @@
-import React from 'react';
-import { HeroSection } from '@/components/landing/HeroSection';
-import { DatasetUploader } from '@/components/landing/DatasetUploader';
-import { Show } from '@/components/ClerkShow';
-import { AuthenticatedHome } from '@/components/dashboard/AuthenticatedHome';
+import React from "react";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { DatasetUploader } from "@/components/landing/DatasetUploader";
+import { Show } from "@/components/ClerkShow";
+import { SignedInLandingRedirect } from "@/components/dashboard/SignedInLandingRedirect";
 
 export default function LandingPage() {
   return (
@@ -14,10 +14,10 @@ export default function LandingPage() {
             <div className="absolute top-0 left-0 w-32 h-32 border-l border-t border-accent-dim/30 pointer-events-none" />
             <HeroSection />
           </section>
-          
+
           <section className="bg-bg-elevated/30 flex flex-col items-center justify-center relative">
             <DatasetUploader />
-            
+
             <footer className="absolute bottom-8 text-[10px] mono text-tertiary uppercase flex gap-6">
               <span>Security: PII Scrubbing Active</span>
               <span>·</span>
@@ -27,7 +27,7 @@ export default function LandingPage() {
         </main>
       </Show>
       <Show when="signed-in">
-        <AuthenticatedHome />
+        <SignedInLandingRedirect />
       </Show>
     </>
   );
