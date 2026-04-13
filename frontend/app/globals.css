@@ -57,7 +57,7 @@
 @layer components {
   /* Minimalist Editorial Depth */
   .glass {
-    @apply bg-bg-base/80 backdrop-blur-md border border-bg-border;
+    @apply bg-bg-base backdrop-blur-md border border-bg-border;
   }
 
   .card-prime {
