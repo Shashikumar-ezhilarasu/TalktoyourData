@@ -20,13 +20,7 @@ let _user: AuthUser | null = null;
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const auth = {
-  getToken: () => {
-    if (typeof window !== "undefined" && (window as any).Clerk) {
-      // In Clerk mode we only trust the in-memory token synchronized from Clerk.
-      return _token;
-    }
-    return _token;
-  },
+  getToken: () => _token,
 
   getTokenAsync: async () => {
     if (typeof window !== "undefined" && (window as any).Clerk) {
