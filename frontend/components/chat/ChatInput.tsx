@@ -3,9 +3,34 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Command, ArrowUp } from "lucide-react";
 
-export const ChatInput = ({ onSend }: { onSend: (q: string) => void }) => {
+type QuickPrompt = {
+  label: string;
+  query: string;
+  tone?: "neutral" | "alert";
+};
+
+export const ChatInput = ({
+  onSend,
+  quickPrompts,
+}: {
+  onSend: (q: string) => void;
+  quickPrompts?: QuickPrompt[];
+}) => {
   const [question, setQuestion] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+
+  const prompts: QuickPrompt[] =
+    quickPrompts && quickPrompts.length > 0
+      ? quickPrompts
+      : [
+          { label: "Compare", query: "Compare the top two groups" },
+          { label: "Breakdown", query: "Break down the total by category" },
+          {
+            label: "Anomaly",
+            query: "Find anomalies in the numeric values",
+            tone: "alert",
+          },
+        ];
 
   const handleSubmit = () => {
     if (!question.trim()) return;
@@ -17,25 +42,19 @@ export const ChatInput = ({ onSend }: { onSend: (q: string) => void }) => {
     <div className="w-full">
       <div className="flex flex-col gap-4">
         {/* Intent Shortcuts */}
-        <div className="flex gap-2 justify-center">
-          {[
-            {
-              label: "Compare",
-              color: "bg-bg-elevated text-text-primary border-bg-border",
-            },
-            {
-              label: "Breakdown",
-              color: "bg-bg-elevated text-text-primary border-bg-border",
-            },
-            { label: "Anomaly", color: "bg-red-dim/70 text-red border-red/20" },
-          ].map((intent, idx) => (
+        <div className="flex gap-2 justify-center flex-wrap">
+          {prompts.map((intent, idx) => (
             <motion.button
               initial={{ y: 5, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: idx * 0.1 }}
               key={intent.label}
-              onClick={() => onSend(`${intent.label} query`)}
-              className={`px-4 py-1.5 rounded-full text-[10px] mono uppercase font-bold tracking-widest ${intent.color} border hover:border-accent-main/30 transition-all shadow-sm`}
+              onClick={() => onSend(intent.query)}
+              className={`px-4 py-1.5 rounded-full text-[10px] mono uppercase font-bold tracking-widest border hover:border-accent-main/30 transition-all shadow-sm ${
+                intent.tone === "alert"
+                  ? "bg-red-dim/70 text-red border-red/20"
+                  : "bg-bg-elevated text-text-primary border-bg-border"
+              }`}
             >
               {intent.label}
             </motion.button>

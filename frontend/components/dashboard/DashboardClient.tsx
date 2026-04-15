@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { PipelineStatusBar } from "@/components/chat/PipelineStatusBar";
@@ -25,6 +25,8 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
   const [sessionSearch, setSessionSearch] = useState("");
   const eventSourceRef = useRef<EventSource | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const authRetryRef = useRef(0);
 
   const {
     setDataset,
@@ -68,6 +70,18 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
+        const token = await auth.getTokenAsync();
+        const clerkUserReady =
+          typeof window !== "undefined" && (window as any).Clerk?.user;
+
+        if (clerkUserReady && !token) {
+          if (authRetryRef.current < 10) {
+            authRetryRef.current += 1;
+            setTimeout(loadDashboardData, 300);
+          }
+          return;
+        }
+
         const [datasetResponse, sessionsResponse] = await Promise.all([
           api.datasets.get(datasetId),
           api.chat.listSessions(datasetId),
@@ -78,7 +92,7 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
 
         if (sessionsResponse.sessions.length > 0) {
           await loadSessionMessages(sessionsResponse.sessions[0]._id);
-        } else {
+        } else if (!clerkUserReady || token) {
           const sessionResponse = await api.chat.ensureSession(datasetId);
           const newSession = {
             _id: sessionResponse.session._id,
@@ -104,6 +118,38 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
     setChatSessions,
     prependChatSession,
   ]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const retryIfNeeded = async () => {
+      if (cancelled) return;
+      const token = await auth.getTokenAsync();
+
+      if (!token) {
+        const clerkReady =
+          typeof window !== "undefined" && (window as any).Clerk?.user;
+        if (clerkReady && authRetryRef.current < 10) {
+          authRetryRef.current += 1;
+          setTimeout(retryIfNeeded, 300);
+        }
+        return;
+      }
+
+      const sessionsResponse = await api.chat.listSessions(datasetId);
+      if (cancelled) return;
+
+      if (sessionsResponse.sessions.length > 0) {
+        setChatSessions(sessionsResponse.sessions);
+        await loadSessionMessages(sessionsResponse.sessions[0]._id);
+      }
+    };
+
+    retryIfNeeded();
+    return () => {
+      cancelled = true;
+    };
+  }, [datasetId, setChatSessions, setQueries]);
 
   const createNewSession = async () => {
     try {
@@ -178,6 +224,35 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
   const filteredSessions = chatSessions.filter((session) =>
     session.title.toLowerCase().includes(sessionSearch.toLowerCase()),
   );
+
+  const quickPrompts = useMemo(() => {
+    const profiles = dataset?.columnProfiles || [];
+    const metricProfile =
+      profiles.find((p) => p.likelyMetric) ||
+      profiles.find((p) => p.type === "number");
+    const dimensionProfile =
+      profiles.find((p) => p.likelyDimension) ||
+      profiles.find((p) => p.type === "category" || p.type === "string");
+
+    const metric = metricProfile?.name || "the main metric";
+    const dimension = dimensionProfile?.name || "category";
+
+    return [
+      {
+        label: "Compare",
+        query: `Compare ${metric} by ${dimension}`,
+      },
+      {
+        label: "Breakdown",
+        query: `Break down ${metric} by ${dimension}`,
+      },
+      {
+        label: "Anomaly",
+        query: `Find anomalies in ${metric}`,
+        tone: "alert" as const,
+      },
+    ];
+  }, [dataset]);
 
   const handleQuery = async (question: string) => {
     const cleanupInFlightPipeline = () => {
@@ -268,6 +343,14 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!chatScrollRef.current) return;
+    chatScrollRef.current.scrollTo({
+      top: chatScrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [queries.length, pendingQuestion]);
+
   return (
     <DashboardShell
       sidebar={
@@ -341,7 +424,7 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
                   className={`w-full text-left p-4 rounded-lg border transition-all group shadow-sm hover:shadow-md ${
                     chatSessionId === session._id
                       ? "bg-accent-dim border-accent-main/30"
-                      : "bg-bg-base border-bg-border hover:border-black"
+                      : "bg-bg-base border-bg-border hover:border-text-tertiary"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
@@ -400,7 +483,10 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
         </div>
       }
     >
-      <div className="h-full w-full overflow-y-auto bg-bg-surface relative py-10">
+      <div
+        ref={chatScrollRef}
+        className="h-full w-full overflow-y-auto bg-bg-surface relative py-10"
+      >
         {/* Background Dot Grid */}
         <div className="absolute inset-0 dot-grid pointer-events-none opacity-40" />
 
@@ -557,12 +643,13 @@ export default function DashboardClient({ datasetId }: { datasetId: string }) {
                 </motion.div>
               </>
             )}
+            <div className="h-px w-full" aria-hidden="true" />
           </div>
         </div>
 
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-6">
           <div className="w-full">
-            <ChatInput onSend={handleQuery} />
+            <ChatInput onSend={handleQuery} quickPrompts={quickPrompts} />
           </div>
         </div>
       </div>

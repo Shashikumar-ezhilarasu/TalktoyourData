@@ -28,6 +28,10 @@ export const auth = {
 
       // Clerk may still be initializing when first protected requests fire.
       for (let attempt = 0; attempt < 20; attempt += 1) {
+        if (!clerk.loaded) {
+          await wait(100);
+          continue;
+        }
         const session = clerk.session;
 
         if (session) {
@@ -41,12 +45,8 @@ export const auth = {
           }
         }
 
-        // No active signed-in user yet, do not keep waiting.
-        if (!clerk.user) {
-          return null;
-        }
-
-        await wait(100);
+        // If Clerk is loaded and there is no user, we are signed out.
+        return null;
       }
 
       return null;
