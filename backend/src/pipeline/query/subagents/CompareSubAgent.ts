@@ -1,14 +1,14 @@
-import { BaseSubAgent } from './BaseSubAgent';
+import { BaseSubAgent } from "./BaseSubAgent";
 
 export class CompareSubAgent extends BaseSubAgent {
-  readonly intent = 'COMPARISON';
+  readonly intent = "COMPARE";
 
   protected computeStats(data: any[], resolved: any) {
     const metric = resolved.metricColumns[0]?.columnName;
     const dimension = resolved.dimensionColumns[0]?.columnName;
-    
+
     if (!metric || !dimension) {
-        throw new Error('Comparison requires a metric and a dimension');
+      throw new Error("Comparison requires a metric and a dimension");
     }
 
     return this.statEngine.computeComparison(data, metric, dimension);
