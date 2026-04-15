@@ -18,7 +18,7 @@ import { motion } from "framer-motion";
 
 interface ChartModuleProps {
   type: "bar" | "line" | "pie" | "comparison";
-  data: {
+  data?: {
     labels: string[];
     values: number[];
     secondaryValues?: number[];
@@ -35,11 +35,36 @@ const COLORS = [
 ];
 
 export const ChartModule: React.FC<ChartModuleProps> = ({ type, data }) => {
-  const chartData = data.labels.map((l, i) => ({
-    name: l,
-    value: Number(data.values[i] ?? 0),
-    secondaryValue: Number(data.secondaryValues?.[i] ?? 0),
+  const labels = Array.isArray(data?.labels)
+    ? data.labels.map((label) => String(label ?? ""))
+    : [];
+  const values = Array.isArray(data?.values)
+    ? data.values.map((value) => Number(value ?? 0))
+    : [];
+  const secondaryValues = Array.isArray(data?.secondaryValues)
+    ? data.secondaryValues.map((value) => Number(value ?? 0))
+    : [];
+
+  const maxLength = Math.max(
+    labels.length,
+    values.length,
+    secondaryValues.length,
+  );
+  const chartData = Array.from({ length: maxLength }, (_, i) => ({
+    name: labels[i] || `Item ${i + 1}`,
+    value: Number(values[i] ?? 0),
+    secondaryValue: Number(secondaryValues[i] ?? 0),
   }));
+
+  if (chartData.length === 0) {
+    return (
+      <div className="h-[280px] w-full rounded-md border border-dashed border-bg-border bg-bg-base/60 flex items-center justify-center px-6 text-center">
+        <p className="text-sm text-text-tertiary">
+          No chart data available for this response.
+        </p>
+      </div>
+    );
+  }
 
   const renderTooltip = (props: any) => {
     const { active, payload } = props;
@@ -58,14 +83,9 @@ export const ChartModule: React.FC<ChartModuleProps> = ({ type, data }) => {
     return null;
   };
 
-  const css =
-    typeof window !== "undefined"
-      ? getComputedStyle(document.documentElement)
-      : null;
-  const gridColor = css?.getPropertyValue("--bg-border")?.trim() || "#E5E7EB";
-  const tickColor =
-    css?.getPropertyValue("--text-tertiary")?.trim() || "#9CA3AF";
-  const surfaceColor = css?.getPropertyValue("--bg-base")?.trim() || "#FFFFFF";
+  const gridColor = "var(--bg-border)";
+  const tickColor = "var(--text-tertiary)";
+  const surfaceColor = "var(--bg-base)";
 
   return (
     <motion.div
