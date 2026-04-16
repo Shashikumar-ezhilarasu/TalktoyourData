@@ -24,7 +24,7 @@
 13. [Running Locally](#running-locally)
 14. [First Run Walkthrough](#first-run-walkthrough)
 15. [API Reference](#api-reference)
-16. [Authentication & Security](#authentication--security)
+16. [Enterprise Authentication & Security](#enterprise-authentication--security)
 17. [Real-Time Query Flow](#real-time-query-flow)
 18. [Queue & Worker System](#queue--worker-system)
 19. [Dataset Ownership Model](#dataset-ownership-model)
@@ -108,8 +108,8 @@ Questions receive a `202 Accepted` immediately. Progress updates stream live ove
 | **Chart types** | Bar, line, pie, scatter — auto-selected or overridable |
 | **Session memory** | Follow-up questions reference earlier answers |
 | **Multi-session support** | Multiple chat threads per dataset |
-| **JWT authentication** | Register/login, protected routes, 7-day tokens |
-| **Dataset ownership** | Datasets belong to the user who uploaded them |
+| **Clerk Managed Auth** | Enterprise-grade login/register, multi-tenant sessions |
+| **Dataset ownership** | Datasets belong to the Clerk user who uploaded them |
 | **Legacy claim** | Older unowned datasets auto-claimed on login |
 | **PII scrubbing** | Email, phone, SSN patterns removed before ingestion |
 | **Queue-based ingestion** | BullMQ + Redis with in-memory fallback |
@@ -251,7 +251,7 @@ Questions receive a `202 Accepted` immediately. Progress updates stream live ove
 ```mermaid
 flowchart LR
   UI[Next.js Frontend] --> API[Express API]
-  API --> AUTH[JWT Auth Middleware]
+  API --> AUTH[Clerk Middleware]
   API --> MONGO[(MongoDB Atlas)]
   API --> SSE[Server-Sent Events]
   API --> REDIS[(Redis)]
@@ -261,8 +261,7 @@ flowchart LR
   INGEST --> MONGO
   EMBED --> MONGO
   API --> GEMINI[Google Gemini Models]
-  GEMINI --> FLASH[gemini-2.5-flash\nQuery + Insights]
-  GEMINI --> EMBED2[text-embedding-004\nSemantic Chunks]
+  UI --> CLERK[Clerk Managed Auth]
 ```
 
 ### Component Responsibilities
@@ -576,12 +575,10 @@ JWT_SECRET=a_long_random_secret_at_least_32_chars
 PORT=4000
 NODE_ENV=development
 
-# ── Auth ──────────────────────────────────────────────────
-JWT_EXPIRES_IN=7d
-
-# ── Redis / Queue ─────────────────────────────────────────
-REDIS_URL=redis://localhost:6379
-# Leave blank to run in in-memory fallback mode
+# ── Auth (Clerk) ─────────────────────────────────────────
+CLERK_PUBLISHABLE_KEY=your_publishable_key
+CLERK_SECRET_KEY=your_secret_key
+CLERK_JWT_KEY=your_jwt_key (optional for edge)
 
 # ── Gemini Models ─────────────────────────────────────────
 GEMINI_EMBEDDING_MODEL=text-embedding-004
@@ -697,7 +694,7 @@ npm run dev
 ## First Run Walkthrough
 
 ### 1. Create an account
-Navigate to http://localhost:3000 and click **Register**. Enter email and password. You will be issued a JWT and redirected to the dashboard.
+Navigate to http://localhost:3000 and click **Get Started**. You will be presented with the Clerk authentication portal. Sign up using your email or a social provider. Clerk handles the secure identity verification and redirects you back to the DataLens dashboard.
 
 ### 2. Upload a dataset
 Click **Upload Dataset** and drag in a CSV or JSON file (max 50 MB). Alternatively, click **Load Sample Dataset** to use a pre-built example (sales data, product telemetry, or HR records).
@@ -755,39 +752,11 @@ Authorization: Bearer <jwt_token>
 
 ---
 
-### Auth
+#### Authentication
+DataLens uses **Clerk** for all authentication and user management. Use Clerk's frontend components or specialized SDKs to obtain a session token.
 
-#### `POST /auth/register`
-Create a new user account.
-
-**Request body:**
-```json
-{
-  "email": "user@example.com",
-  "password": "securepassword"
-}
-```
-
-**Response:**
-```json
-{
-  "token": "eyJhbGci...",
-  "user": { "id": "...", "email": "user@example.com" }
-}
-```
-
----
-
-#### `POST /auth/login`
-Authenticate and receive a JWT.
-
-**Request body:**
-```json
-{
-  "email": "user@example.com",
-  "password": "securepassword"
-}
-```
+All API requests (except health) must include:
+`Authorization: Bearer <clerk_session_token>`
 
 ---
 
@@ -997,22 +966,22 @@ Delete a session and all its messages.
 
 ---
 
-## Authentication & Security
+## Enterprise Authentication & Security
 
-### JWT Flow
+### Clerk Flow
 
 ```
-Register/Login → bcryptjs password hash → JWT issued (7d expiry)
-Request → Authorization: Bearer <token>
-Middleware → Verify signature → Attach user to req.user
-Protected controller → Use req.user.id for ownership checks
+User registers via Clerk UI → Frontend receives session token
+Request → Authorization: Bearer <session_token>
+Middleware → Clerk SDK verifyToken → Sync with local MongoDB User model
+Protected controller → Use req.user.userId (Clerk Subject) for ownership
 ```
 
-### Password Storage
-Passwords are hashed with bcryptjs (cost factor 12) before storage. Plaintext passwords are never stored or logged.
+### Identity Syncing
+When a user logs in via Clerk for the first time, DataLens automatically creates a shadow record in the local MongoDB `User` model. This allows us to link datasets and chat history to a stable Clerk ID while maintaining local database referential integrity.
 
 ### Dataset Ownership
-Every dataset is linked to the `userId` of the uploader. Queries, sessions, and stream endpoints verify that `dataset.userId === req.user.id`. A user cannot access, query, or delete another user's dataset.
+Every dataset is linked to the `userId` of the uploader (the Clerk Subject ID). Queries, sessions, and stream endpoints verify that `dataset.userId === req.user.userId`. A user cannot access, query, or delete another user's dataset.
 
 ### Security Headers (Helmet)
 All responses include:
