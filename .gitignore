@@ -4,5 +4,5 @@ dist/
 .env
 .DS_Store
 *.log
-*.csv
+# *.csv (Removing this to allow sample datasets in the repo)
 .env.local
