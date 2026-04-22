@@ -6,7 +6,7 @@ import {
 } from "./types";
 import { auth, AuthUser } from "./auth";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 class ApiError extends Error {
   constructor(
