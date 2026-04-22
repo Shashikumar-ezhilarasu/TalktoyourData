@@ -7,7 +7,7 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console()],
 });
 
-const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+const redisUrl = process.env.REDIS_URL;
 
 export let redis!: Redis;
 let isRedisAvailable = false;
